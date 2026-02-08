@@ -5,14 +5,14 @@ import { GoogleGenAI, Modality, Session, ActivityHandling } from '@google/genai'
 import type { LiveServerMessage } from '@google/genai';
 import { useAudioCapture } from './useAudioCapture';
 import { useAudioPlayback } from './useAudioPlayback';
-import { getSystemPrompt } from '@/lib/mewtwo-prompts';
 import { storage } from '@/lib/storage';
 import { Message, VoiceState, LiveConnectionState } from '@/types/chat';
+import { CharacterConfig } from '@/types/character';
 
 const MODEL = 'gemini-2.5-flash-native-audio-preview-12-2025';
 const MAX_RECONNECT_ATTEMPTS = 3;
 
-export function useGeminiLive() {
+export function useGeminiLive(character: CharacterConfig) {
   const [connectionState, setConnectionState] = useState<LiveConnectionState>('disconnected');
   const [voiceState, setVoiceState] = useState<VoiceState>('idle');
   const [messages, setMessages] = useState<Message[]>([]);
@@ -131,7 +131,7 @@ export function useGeminiLive() {
       const res = await fetch('/api/gemini-token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isStoryMode: isStoryModeRef.current }),
+        body: JSON.stringify({ characterId: character.id, isStoryMode: isStoryModeRef.current }),
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
@@ -260,10 +260,10 @@ export function useGeminiLive() {
           responseModalities: [Modality.AUDIO],
           speechConfig: {
             voiceConfig: {
-              prebuiltVoiceConfig: { voiceName: 'Fenrir' },
+              prebuiltVoiceConfig: { voiceName: character.voice },
             },
           },
-          systemInstruction: getSystemPrompt(isStoryModeRef.current),
+          systemInstruction: character.getSystemPrompt(isStoryModeRef.current),
           realtimeInputConfig: {
             activityHandling: isStoryModeRef.current ? ActivityHandling.NO_INTERRUPTION : ActivityHandling.START_OF_ACTIVITY_INTERRUPTS,
             automaticActivityDetection: {

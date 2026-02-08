@@ -7,9 +7,10 @@ interface MicButtonProps {
   connectionState: LiveConnectionState;
   isSupported: boolean;
   onToggle: () => void;
+  micGradient?: string;
 }
 
-export default function MicButton({ connectionState, isSupported, onToggle }: MicButtonProps) {
+export default function MicButton({ connectionState, isSupported, onToggle, micGradient = 'from-purple-500 to-violet-700' }: MicButtonProps) {
   const isConnected = connectionState === 'connected';
   const isConnecting = connectionState === 'connecting';
   const isReconnecting = connectionState === 'reconnecting';
@@ -43,7 +44,7 @@ export default function MicButton({ connectionState, isSupported, onToggle }: Mi
             ? 'bg-gradient-to-br from-yellow-500 to-amber-600 animate-pulse'
             : isConnected
               ? 'bg-gradient-to-br from-red-500 to-red-700 active:scale-90'
-              : 'bg-gradient-to-br from-purple-500 to-violet-700 mic-glow active:scale-90'
+              : `bg-gradient-to-br ${micGradient} mic-glow active:scale-90`
         }
         ${!isSupported ? 'opacity-30 cursor-not-allowed' : ''}
       `}

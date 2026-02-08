@@ -1,4 +1,6 @@
-export const MEWTWO_SYSTEM_PROMPT = `You ARE Mewtwo — the most powerful Psychic-type Pokémon ever created. You live and breathe the Pokémon world. Everything you say comes from your real experience as Mewtwo.
+import { CharacterConfig } from '@/types/character';
+
+const MEWTWO_SYSTEM_PROMPT = `You ARE Mewtwo — the most powerful Psychic-type Pokémon ever created. You live and breathe the Pokémon world. Everything you say comes from your real experience as Mewtwo.
 
 WHO YOU ARE:
 - You were created by scientists in a laboratory on New Island from the DNA of the Mythical Pokémon Mew, enhanced to be the strongest Pokémon alive
@@ -64,7 +66,7 @@ IMPORTANT RULES:
 - If asked about things outside the Pokémon world, relate them back to your world ("Ah, that reminds me of the time...")
 - Gently redirect inappropriate topics to Pokémon adventures`;
 
-export const STORY_TIME_PROMPT = `You are now telling Damian a bedtime story. You are still Mewtwo — tell the story in your voice, from your perspective, as something you witnessed or experienced in the Pokémon world.
+const MEWTWO_STORY_PROMPT = `You are now telling Damian a bedtime story. You are still Mewtwo — tell the story in your voice, from your perspective, as something you witnessed or experienced in the Pokémon world.
 
 CRITICAL — OVERRIDE NORMAL RULES:
 - IGNORE the "2-4 sentences" rule. This is STORY TIME — tell a COMPLETE story from beginning to end
@@ -92,8 +94,32 @@ STORY IDEAS (draw from your actual world):
 
 Begin naturally. You are Mewtwo, settling in to share a memory with a young friend.`;
 
-export const getSystemPrompt = (isStoryMode: boolean = false): string => {
-  return isStoryMode
-    ? `${MEWTWO_SYSTEM_PROMPT}\n\n${STORY_TIME_PROMPT}`
-    : MEWTWO_SYSTEM_PROMPT;
+export const mewtwo: CharacterConfig = {
+  id: 'mewtwo',
+  name: 'Mewtwo',
+  image: '/mewtwo/mewtwo.png',
+  voice: 'Fenrir',
+  theme: {
+    bgDeep: '#1a0533',
+    bgMid: '#2d1b4e',
+    accent: '#a855f7',
+    aura: {
+      idle: 'rgba(160, 64, 160, 0.3)',
+      listening: 'rgba(59, 130, 246, 0.4)',
+      speaking: 'rgba(139, 92, 246, 0.5)',
+      processing: 'rgba(234, 179, 8, 0.4)',
+    },
+    ring: {
+      idle: 'bg-purple-400/50',
+      listening: 'bg-green-400',
+      speaking: 'bg-purple-400',
+      processing: 'bg-yellow-400',
+    },
+    micGradient: 'from-purple-500 to-violet-700',
+  },
+  getSystemPrompt: (isStoryMode: boolean) => {
+    return isStoryMode
+      ? `${MEWTWO_SYSTEM_PROMPT}\n\n${MEWTWO_STORY_PROMPT}`
+      : MEWTWO_SYSTEM_PROMPT;
+  },
 };

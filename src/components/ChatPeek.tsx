@@ -6,14 +6,15 @@ import { ChevronUpIcon } from './Icons';
 interface ChatPeekProps {
   messages: Message[];
   onOpen: () => void;
+  characterName?: string;
 }
 
-export default function ChatPeek({ messages, onOpen }: ChatPeekProps) {
+export default function ChatPeek({ messages, onOpen, characterName = 'Mewtwo' }: ChatPeekProps) {
   const lastMessage = messages[messages.length - 1];
 
   if (!lastMessage) return null;
 
-  const prefix = lastMessage.role === 'user' ? 'You: ' : 'Mewtwo: ';
+  const prefix = lastMessage.role === 'user' ? 'You: ' : `${characterName}: `;
 
   return (
     <button

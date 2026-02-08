@@ -2,13 +2,13 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Mewtwo AI - Talk with Mewtwo',
-  description: 'Interactive voice chat with Mewtwo, your legendary Pokémon friend',
+  title: 'AI Dream Buddies',
+  description: 'Talk with your favorite characters through interactive voice chat',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'Mewtwo AI',
+    title: 'AI Dream Buddies',
   },
 };
 
@@ -18,7 +18,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: 'cover',
-  themeColor: '#1a0533',
+  themeColor: '#111827',
 };
 
 export default function RootLayout({

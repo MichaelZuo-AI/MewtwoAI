@@ -1,6 +1,6 @@
 import { GoogleGenAI, Modality } from '@google/genai';
 import { NextResponse } from 'next/server';
-import { getSystemPrompt } from '@/lib/mewtwo-prompts';
+import { getCharacter } from '@/lib/characters';
 
 export async function POST(request: Request) {
   const apiKey = process.env.GEMINI_API_KEY;
@@ -12,9 +12,17 @@ export async function POST(request: Request) {
   }
 
   try {
-    // Read story mode flag from request body
     const body = await request.json().catch(() => ({}));
+    const characterId = body.characterId || 'mewtwo';
     const isStoryMode = body.isStoryMode === true;
+
+    const character = getCharacter(characterId);
+    if (!character) {
+      return NextResponse.json(
+        { error: `Unknown character: ${characterId}` },
+        { status: 400 }
+      );
+    }
 
     const ai = new GoogleGenAI({ apiKey });
     const token = await ai.authTokens.create({
@@ -25,7 +33,7 @@ export async function POST(request: Request) {
           model: 'gemini-2.5-flash-native-audio-preview-12-2025',
           config: {
             responseModalities: [Modality.AUDIO],
-            systemInstruction: getSystemPrompt(isStoryMode),
+            systemInstruction: character.getSystemPrompt(isStoryMode),
           },
         },
         httpOptions: { apiVersion: 'v1alpha' },

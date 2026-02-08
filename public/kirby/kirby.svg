@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <!-- Kirby placeholder - replace with official artwork -->
+  <!-- Body -->
+  <ellipse cx="200" cy="220" rx="140" ry="130" fill="#FFB8D0"/>
+  <!-- Left foot -->
+  <ellipse cx="130" cy="340" rx="50" ry="25" fill="#C8325A"/>
+  <!-- Right foot -->
+  <ellipse cx="270" cy="340" rx="50" ry="25" fill="#C8325A"/>
+  <!-- Left eye -->
+  <ellipse cx="160" cy="190" rx="20" ry="32" fill="#1A1A2E"/>
+  <!-- Left eye shine -->
+  <ellipse cx="155" cy="180" rx="8" ry="10" fill="#4466FF"/>
+  <ellipse cx="152" cy="176" rx="4" ry="5" fill="white"/>
+  <!-- Right eye -->
+  <ellipse cx="240" cy="190" rx="20" ry="32" fill="#1A1A2E"/>
+  <!-- Right eye shine -->
+  <ellipse cx="235" cy="180" rx="8" ry="10" fill="#4466FF"/>
+  <ellipse cx="232" cy="176" rx="4" ry="5" fill="white"/>
+  <!-- Mouth (smile) -->
+  <path d="M 175 250 Q 200 275 225 250" stroke="#C8325A" stroke-width="4" fill="none"/>
+  <!-- Left cheek -->
+  <ellipse cx="130" cy="240" rx="22" ry="15" fill="#FF6B9D" opacity="0.6"/>
+  <!-- Right cheek -->
+  <ellipse cx="270" cy="240" rx="22" ry="15" fill="#FF6B9D" opacity="0.6"/>
+  <!-- Left arm -->
+  <ellipse cx="75" cy="230" rx="35" ry="28" fill="#FFB8D0" transform="rotate(-20 75 230)"/>
+  <!-- Right arm -->
+  <ellipse cx="325" cy="230" rx="35" ry="28" fill="#FFB8D0" transform="rotate(20 325 230)"/>
+</svg>

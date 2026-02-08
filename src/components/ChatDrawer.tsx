@@ -10,9 +10,10 @@ interface ChatDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   onClearHistory: () => void;
+  bgColor?: string;
 }
 
-export default function ChatDrawer({ messages, isOpen, onClose, onClearHistory }: ChatDrawerProps) {
+export default function ChatDrawer({ messages, isOpen, onClose, onClearHistory, bgColor }: ChatDrawerProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -33,7 +34,7 @@ export default function ChatDrawer({ messages, isOpen, onClose, onClearHistory }
       />
 
       {/* Drawer */}
-      <div className="relative h-[70dvh] bg-mewtwo-bg-deep/95 backdrop-blur-lg rounded-t-3xl animate-slide-up flex flex-col">
+      <div className="relative h-[70dvh] backdrop-blur-lg rounded-t-3xl animate-slide-up flex flex-col" style={bgColor ? { background: `${bgColor}f2` } : undefined}>
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
           <button

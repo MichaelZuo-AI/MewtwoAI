@@ -4,14 +4,21 @@ import { useState } from 'react';
 import { useGeminiLive } from '@/hooks/useGeminiLive';
 import { useWakeLock } from '@/hooks/useWakeLock';
 import { useEffect } from 'react';
-import MewtwoCharacter from './MewtwoCharacter';
+import { CharacterConfig } from '@/types/character';
+import CharacterDisplay from './CharacterDisplay';
 import MicButton from './MicButton';
 import ChatPeek from './ChatPeek';
 import ChatDrawer from './ChatDrawer';
 import SettingsMenu from './SettingsMenu';
 import StoryTimeButton from './StoryTimeButton';
+import { ArrowLeftIcon } from './Icons';
 
-export default function VoiceChat() {
+interface VoiceChatProps {
+  character: CharacterConfig;
+  onBack: () => void;
+}
+
+export default function VoiceChat({ character, onBack }: VoiceChatProps) {
   const {
     voiceState,
     connectionState,
@@ -23,7 +30,7 @@ export default function VoiceChat() {
     disconnect,
     clearHistory,
     switchStoryMode,
-  } = useGeminiLive();
+  } = useGeminiLive(character);
 
   const { request: requestWakeLock, release: releaseWakeLock } = useWakeLock();
   const [chatOpen, setChatOpen] = useState(false);
@@ -49,16 +56,25 @@ export default function VoiceChat() {
   };
 
   return (
-    <div className="flex flex-col h-[100dvh] bg-gradient-to-b from-mewtwo-bg-deep to-mewtwo-bg-mid" style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
+    <div className="flex flex-col h-[100dvh]" style={{ background: `linear-gradient(to bottom, ${character.theme.bgDeep}, ${character.theme.bgMid})`, paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
       {/* Top bar — icon-only */}
       <div className="flex items-center justify-between px-4 pt-2 pb-1 z-10">
-        <SettingsMenu onClearHistory={clearHistory} />
+        <div className="flex items-center gap-2">
+          <button
+            onClick={onBack}
+            aria-label="Back to character select"
+            className="w-12 h-12 rounded-full flex items-center justify-center bg-white/10 text-white/70 hover:bg-white/20 transition-colors"
+          >
+            <ArrowLeftIcon className="w-6 h-6" />
+          </button>
+          <SettingsMenu onClearHistory={clearHistory} bgColor={character.theme.bgMid} />
+        </div>
         <StoryTimeButton onToggle={switchStoryMode} isStoryMode={isStoryMode} />
       </div>
 
-      {/* Hero zone — Mewtwo character takes ~60% of screen */}
+      {/* Hero zone — character takes ~60% of screen */}
       <div className="flex-1 flex items-center justify-center min-h-0">
-        <MewtwoCharacter state={voiceState} connectionState={connectionState} />
+        <CharacterDisplay character={character} state={voiceState} connectionState={connectionState} />
       </div>
 
       {/* Error banner (subtle, no text wall) */}
@@ -72,7 +88,7 @@ export default function VoiceChat() {
 
       {/* Chat peek — last message preview */}
       <div className="flex justify-center mb-3">
-        <ChatPeek messages={messages} onOpen={() => setChatOpen(true)} />
+        <ChatPeek messages={messages} onOpen={() => setChatOpen(true)} characterName={character.name} />
       </div>
 
       {/* Mic button */}
@@ -81,6 +97,7 @@ export default function VoiceChat() {
           connectionState={connectionState}
           isSupported={isSupported}
           onToggle={handleToggleConnection}
+          micGradient={character.theme.micGradient}
         />
       </div>
 
@@ -90,6 +107,7 @@ export default function VoiceChat() {
         isOpen={chatOpen}
         onClose={() => setChatOpen(false)}
         onClearHistory={clearHistory}
+        bgColor={character.theme.bgDeep}
       />
     </div>
   );

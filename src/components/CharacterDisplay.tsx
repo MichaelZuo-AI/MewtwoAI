@@ -2,38 +2,17 @@
 
 import Image from 'next/image';
 import { VoiceState, LiveConnectionState } from '@/types/chat';
+import { CharacterConfig } from '@/types/character';
 
-interface MewtwoCharacterProps {
+interface CharacterDisplayProps {
+  character: CharacterConfig;
   state: VoiceState;
   connectionState?: LiveConnectionState;
 }
 
-export default function MewtwoCharacter({ state, connectionState }: MewtwoCharacterProps) {
-  const getAuraColor = () => {
-    switch (state) {
-      case 'listening':
-        return 'rgba(59, 130, 246, 0.4)';
-      case 'speaking':
-        return 'rgba(139, 92, 246, 0.5)';
-      case 'processing':
-        return 'rgba(234, 179, 8, 0.4)';
-      default:
-        return 'rgba(160, 64, 160, 0.3)';
-    }
-  };
-
-  const getRingColor = () => {
-    switch (state) {
-      case 'listening':
-        return 'bg-green-400';
-      case 'speaking':
-        return 'bg-purple-400';
-      case 'processing':
-        return 'bg-yellow-400';
-      default:
-        return 'bg-purple-400/50';
-    }
-  };
+export default function CharacterDisplay({ character, state, connectionState }: CharacterDisplayProps) {
+  const auraColor = character.theme.aura[state] ?? character.theme.aura.idle;
+  const ringColor = character.theme.ring[state] ?? character.theme.ring.idle;
 
   const isActive = connectionState === 'connected' && state !== 'idle';
 
@@ -49,10 +28,10 @@ export default function MewtwoCharacter({ state, connectionState }: MewtwoCharac
             state === 'processing' ? 'mewtwo-aura-processing' :
             'mewtwo-aura-idle'
           }`}
-          style={{ background: getAuraColor() }}
+          style={{ background: auraColor }}
         />
 
-        {/* Mewtwo image — hero-sized */}
+        {/* Character image — hero-sized */}
         <div
           className={`relative w-64 h-64 md:w-80 md:h-80 lg:w-96 lg:h-96 ${
             state === 'idle' ? 'mewtwo-float' :
@@ -62,8 +41,8 @@ export default function MewtwoCharacter({ state, connectionState }: MewtwoCharac
           }`}
         >
           <Image
-            src="/mewtwo/mewtwo.png"
-            alt="Mewtwo"
+            src={character.image}
+            alt={character.name}
             fill
             className="object-contain drop-shadow-2xl"
             priority
@@ -76,12 +55,12 @@ export default function MewtwoCharacter({ state, connectionState }: MewtwoCharac
         <div className="relative mt-4 flex items-center justify-center" data-testid="voice-ring">
           {/* Expanding ring */}
           <div
-            className={`absolute w-8 h-8 rounded-full ${getRingColor()} ${
+            className={`absolute w-8 h-8 rounded-full ${ringColor} ${
               state === 'speaking' ? 'voice-ring-fast' : 'voice-ring'
             }`}
           />
           {/* Solid center dot */}
-          <div className={`w-3 h-3 rounded-full ${getRingColor()}`} />
+          <div className={`w-3 h-3 rounded-full ${ringColor}`} />
         </div>
       )}
     </div>

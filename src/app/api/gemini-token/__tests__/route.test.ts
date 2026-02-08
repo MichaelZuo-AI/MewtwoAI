@@ -3,7 +3,8 @@
  */
 
 import { POST } from '../route';
-import { MEWTWO_SYSTEM_PROMPT, STORY_TIME_PROMPT } from '@/lib/mewtwo-prompts';
+import { mewtwo } from '@/lib/characters/mewtwo';
+import { kirby } from '@/lib/characters/kirby';
 
 const mockCreate = jest.fn();
 
@@ -50,39 +51,51 @@ describe('/api/gemini-token', () => {
     expect(body.token).toBe('ephemeral-token-123');
   });
 
-  it('calls authTokens.create with correct config including systemInstruction', async () => {
+  it('defaults to mewtwo when no characterId provided', async () => {
     mockCreate.mockResolvedValue({ name: 'tok' });
     await POST(makeRequest());
-    expect(mockCreate).toHaveBeenCalledWith({
-      config: expect.objectContaining({
-        uses: 1,
-        liveConnectConstraints: {
-          model: 'gemini-2.5-flash-native-audio-preview-12-2025',
-          config: {
-            responseModalities: ['AUDIO'],
-            systemInstruction: MEWTWO_SYSTEM_PROMPT,
-          },
-        },
-        httpOptions: { apiVersion: 'v1alpha' },
-      }),
-    });
+    const callArg = mockCreate.mock.calls[0][0];
+    const sysInstruction = callArg.config.liveConnectConstraints.config.systemInstruction;
+    expect(sysInstruction).toContain('Mewtwo');
+  });
+
+  it('uses mewtwo prompt when characterId is mewtwo', async () => {
+    mockCreate.mockResolvedValue({ name: 'tok' });
+    await POST(makeRequest({ characterId: 'mewtwo' }));
+    const callArg = mockCreate.mock.calls[0][0];
+    const sysInstruction = callArg.config.liveConnectConstraints.config.systemInstruction;
+    expect(sysInstruction).toBe(mewtwo.getSystemPrompt(false));
+  });
+
+  it('uses kirby prompt when characterId is kirby', async () => {
+    mockCreate.mockResolvedValue({ name: 'tok' });
+    await POST(makeRequest({ characterId: 'kirby' }));
+    const callArg = mockCreate.mock.calls[0][0];
+    const sysInstruction = callArg.config.liveConnectConstraints.config.systemInstruction;
+    expect(sysInstruction).toBe(kirby.getSystemPrompt(false));
+  });
+
+  it('returns 400 for unknown characterId', async () => {
+    const res = await POST(makeRequest({ characterId: 'pikachu' }));
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toContain('Unknown character');
   });
 
   it('includes story prompt when isStoryMode is true', async () => {
     mockCreate.mockResolvedValue({ name: 'tok' });
-    await POST(makeRequest({ isStoryMode: true }));
+    await POST(makeRequest({ characterId: 'mewtwo', isStoryMode: true }));
     const callArg = mockCreate.mock.calls[0][0];
     const sysInstruction = callArg.config.liveConnectConstraints.config.systemInstruction;
-    expect(sysInstruction).toContain(MEWTWO_SYSTEM_PROMPT);
-    expect(sysInstruction).toContain(STORY_TIME_PROMPT);
+    expect(sysInstruction).toContain('bedtime story');
   });
 
   it('uses normal prompt when isStoryMode is false', async () => {
     mockCreate.mockResolvedValue({ name: 'tok' });
-    await POST(makeRequest({ isStoryMode: false }));
+    await POST(makeRequest({ characterId: 'mewtwo', isStoryMode: false }));
     const callArg = mockCreate.mock.calls[0][0];
     const sysInstruction = callArg.config.liveConnectConstraints.config.systemInstruction;
-    expect(sysInstruction).toBe(MEWTWO_SYSTEM_PROMPT);
+    expect(sysInstruction).toBe(mewtwo.getSystemPrompt(false));
   });
 
   it('defaults to normal prompt when body has no isStoryMode', async () => {
@@ -90,7 +103,7 @@ describe('/api/gemini-token', () => {
     await POST(makeRequest({}));
     const callArg = mockCreate.mock.calls[0][0];
     const sysInstruction = callArg.config.liveConnectConstraints.config.systemInstruction;
-    expect(sysInstruction).toBe(MEWTWO_SYSTEM_PROMPT);
+    expect(sysInstruction).toBe(mewtwo.getSystemPrompt(false));
   });
 
   it('returns 500 when token creation fails', async () => {

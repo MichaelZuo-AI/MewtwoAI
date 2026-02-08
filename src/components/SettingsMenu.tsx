@@ -5,9 +5,10 @@ import { GearIcon } from './Icons';
 
 interface SettingsMenuProps {
   onClearHistory: () => void;
+  bgColor?: string;
 }
 
-export default function SettingsMenu({ onClearHistory }: SettingsMenuProps) {
+export default function SettingsMenu({ onClearHistory, bgColor }: SettingsMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -34,7 +35,7 @@ export default function SettingsMenu({ onClearHistory }: SettingsMenuProps) {
       </button>
 
       {isOpen && (
-        <div className="absolute top-14 left-0 bg-mewtwo-bg-mid/95 backdrop-blur-lg rounded-xl shadow-2xl border border-white/10 py-2 min-w-[160px] z-50">
+        <div className="absolute top-14 left-0 backdrop-blur-lg rounded-xl shadow-2xl border border-white/10 py-2 min-w-[160px] z-50" style={bgColor ? { background: `${bgColor}f2` } : undefined}>
           <button
             onClick={() => {
               onClearHistory();
