@@ -10,6 +10,7 @@ import { storage } from '@/lib/storage';
 import { Message, VoiceState, LiveConnectionState } from '@/types/chat';
 
 const MODEL = 'gemini-2.5-flash-native-audio-preview-12-2025';
+const MAX_RECONNECT_ATTEMPTS = 3;
 
 export function useGeminiLive() {
   const [connectionState, setConnectionState] = useState<LiveConnectionState>('disconnected');
@@ -30,6 +31,18 @@ export function useGeminiLive() {
   const userTranscriptRef = useRef('');
   const assistantTranscriptRef = useRef('');
   const isStoryModeRef = useRef(false);
+
+  // Auto-reconnect refs
+  const isManualDisconnectRef = useRef(false);
+  const reconnectAttemptsRef = useRef(0);
+  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const connectRef = useRef<(isReconnect?: boolean) => Promise<void>>();
+
+  // C2 fix: guard against concurrent connect() calls
+  const isConnectingRef = useRef(false);
+
+  // C1 fix: track switchStoryMode timeout
+  const storyModeTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
   // Keep ref in sync
   useEffect(() => {
@@ -92,12 +105,24 @@ export function useGeminiLive() {
     }
   }, []);
 
-  const connect = useCallback(async () => {
+  const connect = useCallback(async (isReconnect = false) => {
+    // C2 fix: prevent concurrent connect calls
+    if (isConnectingRef.current) return;
+
+    // Skip if user manually disconnected during reconnect delay
+    if (isReconnect && isManualDisconnectRef.current) return;
+
+    isConnectingRef.current = true;
+
+    if (!isReconnect) {
+      isManualDisconnectRef.current = false;
+      reconnectAttemptsRef.current = 0;
+    }
     setError(null);
-    setConnectionState('connecting');
+    setConnectionState(isReconnect ? 'reconnecting' : 'connecting');
 
     try {
-      // 1. Get ephemeral token from our server (include system instruction server-side)
+      // 1. Get ephemeral token from our server
       const res = await fetch('/api/gemini-token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -109,6 +134,12 @@ export function useGeminiLive() {
       }
       const { token } = await res.json();
 
+      // Bail out if user disconnected while fetching token
+      if (isManualDisconnectRef.current) {
+        isConnectingRef.current = false;
+        return;
+      }
+
       // 2. Connect to Gemini Live via SDK using ephemeral token
       const ai = new GoogleGenAI({
         apiKey: token,
@@ -119,7 +150,11 @@ export function useGeminiLive() {
         model: MODEL,
         callbacks: {
           onopen: () => {
+            // S5 fix: guard against onopen firing after manual disconnect
+            if (isManualDisconnectRef.current) return;
             setConnectionState('connected');
+            setError(null);
+            reconnectAttemptsRef.current = 0;
           },
           onmessage: (msg: LiveServerMessage) => {
             const sc = msg.serverContent;
@@ -159,25 +194,48 @@ export function useGeminiLive() {
           },
           onerror: (e: ErrorEvent) => {
             console.error('Live API error:', e);
-            setError('Connection error occurred');
-            setConnectionState('error');
+            // onclose will fire next and handle reconnection
           },
           onclose: () => {
-            setConnectionState('disconnected');
             sessionRef.current = null;
+            stopCapture();
+
+            // I1 fix: clear stale audio from old session
+            clearQueue();
+
+            // I2 fix: flush pending transcripts before reconnecting
+            flushUserTranscript();
+            flushAssistantTranscript();
+
+            // Auto-reconnect on unexpected disconnect
+            if (!isManualDisconnectRef.current && reconnectAttemptsRef.current < MAX_RECONNECT_ATTEMPTS) {
+              setConnectionState('reconnecting');
+              setError('Connection lost — reconnecting...');
+              const delay = 1000 * Math.pow(2, reconnectAttemptsRef.current);
+              reconnectAttemptsRef.current++;
+              reconnectTimeoutRef.current = setTimeout(() => {
+                connectRef.current?.(true);
+              }, delay);
+            } else if (isManualDisconnectRef.current) {
+              setConnectionState('disconnected');
+            } else {
+              setConnectionState('error');
+              setError('Connection lost. Please try again.');
+              reconnectAttemptsRef.current = 0;
+            }
           },
         },
         config: {
           responseModalities: [Modality.AUDIO],
           speechConfig: {
             voiceConfig: {
-              prebuiltVoiceConfig: { voiceName: 'Charon' },
+              prebuiltVoiceConfig: { voiceName: 'Fenrir' },
             },
           },
           systemInstruction: getSystemPrompt(isStoryModeRef.current),
           realtimeInputConfig: {
             automaticActivityDetection: {
-              silenceDurationMs: 2000,
+              silenceDurationMs: isStoryModeRef.current ? 5000 : 2000,
             },
           },
           inputAudioTranscription: {},
@@ -191,18 +249,53 @@ export function useGeminiLive() {
       await startCapture();
     } catch (err) {
       console.error('Failed to connect:', err);
-      setError(err instanceof Error ? err.message : 'Failed to connect');
-      setConnectionState('error');
+
+      // I3 fix: retry on reconnect failures instead of giving up immediately
+      if (isReconnect && !isManualDisconnectRef.current && reconnectAttemptsRef.current < MAX_RECONNECT_ATTEMPTS) {
+        setConnectionState('reconnecting');
+        setError('Connection failed — retrying...');
+        const delay = 1000 * Math.pow(2, reconnectAttemptsRef.current);
+        reconnectAttemptsRef.current++;
+        reconnectTimeoutRef.current = setTimeout(() => {
+          connectRef.current?.(true);
+        }, delay);
+      } else {
+        setError(err instanceof Error ? err.message : 'Failed to connect');
+        setConnectionState('error');
+        reconnectAttemptsRef.current = 0;
+      }
+    } finally {
+      isConnectingRef.current = false;
     }
   }, [
     startCapture,
+    stopCapture,
     enqueueAudio,
     clearQueue,
     flushUserTranscript,
     flushAssistantTranscript,
   ]);
 
+  // Keep connect ref in sync for reconnection callbacks
+  useEffect(() => {
+    connectRef.current = connect;
+  }, [connect]);
+
   const disconnect = useCallback(() => {
+    // Mark as intentional to prevent auto-reconnect
+    isManualDisconnectRef.current = true;
+    reconnectAttemptsRef.current = 0;
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = undefined;
+    }
+
+    // C1 fix: cancel any pending story mode reconnect
+    if (storyModeTimeoutRef.current) {
+      clearTimeout(storyModeTimeoutRef.current);
+      storyModeTimeoutRef.current = undefined;
+    }
+
     // Flush any pending transcripts
     flushUserTranscript();
     flushAssistantTranscript();
@@ -215,6 +308,7 @@ export function useGeminiLive() {
       sessionRef.current = null;
     }
     setConnectionState('disconnected');
+    setError(null);
   }, [stopCapture, stopPlayback, flushUserTranscript, flushAssistantTranscript]);
 
   const clearHistory = useCallback(() => {
@@ -222,14 +316,22 @@ export function useGeminiLive() {
     setMessages([]);
   }, []);
 
+  // C1 fix: use ref-tracked timeout, handle reconnecting state, guard against double-tap
   const switchStoryMode = useCallback(
     (storyMode: boolean) => {
       setIsStoryMode(storyMode);
-      // Reconnect with new system instruction if currently connected
-      if (connectionState === 'connected') {
+
+      // Clear any pending story mode switch
+      if (storyModeTimeoutRef.current) {
+        clearTimeout(storyModeTimeoutRef.current);
+        storyModeTimeoutRef.current = undefined;
+      }
+
+      // Reconnect with new system instruction if currently connected or reconnecting
+      if (connectionState === 'connected' || connectionState === 'reconnecting') {
         disconnect();
         // Small delay to let the disconnect complete
-        setTimeout(() => {
+        storyModeTimeoutRef.current = setTimeout(() => {
           isStoryModeRef.current = storyMode;
           connect();
         }, 500);
@@ -241,6 +343,13 @@ export function useGeminiLive() {
   // Cleanup on unmount
   useEffect(() => {
     return () => {
+      isManualDisconnectRef.current = true;
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
+      if (storyModeTimeoutRef.current) {
+        clearTimeout(storyModeTimeoutRef.current);
+      }
       stopCapture();
       stopPlayback();
       if (sessionRef.current) {

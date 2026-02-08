@@ -29,9 +29,10 @@ export default function VoiceChat() {
 
   const isConnected = connectionState === 'connected';
   const isConnecting = connectionState === 'connecting';
+  const isReconnecting = connectionState === 'reconnecting';
 
   const handleToggleConnection = () => {
-    if (isConnected) {
+    if (isConnected || isReconnecting) {
       disconnect();
     } else {
       connect();
@@ -78,9 +79,13 @@ export default function VoiceChat() {
       {/* Controls */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-lg">
         {/* Connection Status */}
-        {connectionState === 'error' && error && (
-          <div className="mb-3 px-4 py-2 bg-red-50 rounded-lg text-center">
-            <p className="text-sm text-red-600">{error}</p>
+        {error && (connectionState === 'error' || isReconnecting) && (
+          <div className={`mb-3 px-4 py-2 rounded-lg text-center ${
+            isReconnecting ? 'bg-yellow-50' : 'bg-red-50'
+          }`}>
+            <p className={`text-sm ${
+              isReconnecting ? 'text-yellow-700' : 'text-red-600'
+            }`}>{error}</p>
           </div>
         )}
 
@@ -118,7 +123,7 @@ export default function VoiceChat() {
               transition-all duration-200
               shadow-xl
               ${
-                isConnecting
+                isConnecting || isReconnecting
                   ? 'bg-yellow-500 animate-pulse'
                   : isConnected
                     ? 'bg-red-500 hover:bg-red-600 scale-110'
@@ -127,7 +132,7 @@ export default function VoiceChat() {
               ${!isSupported ? 'opacity-50 cursor-not-allowed' : ''}
             `}
           >
-            {isConnecting ? '...' : isConnected ? '🛑' : '🎤'}
+            {isConnecting || isReconnecting ? '...' : isConnected ? '🛑' : '🎤'}
           </button>
         </div>
 

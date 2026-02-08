@@ -43,6 +43,29 @@ describe('mewtwo-prompts', () => {
       expect(MEWTWO_SYSTEM_PROMPT).toContain('courage')
     })
 
+    it('should include voice acting directions for expressive speech', () => {
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('HOW YOU SPEAK')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('enthusiastic expressions')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('WHOOSH')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('young trainer')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('sound effects')
+    })
+
+    it('should encourage playful and animated interaction', () => {
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('playful and animated')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('Celebrate his answers')
+    })
+
+    it('should include parental goals for bravery, learning, and sports', () => {
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('YOUR MISSION WITH DAMIAN')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('BRAVERY')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('LEARNING')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('SPORTS')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('brave')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('learning')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('active')
+    })
+
     it('should enforce never breaking character', () => {
       expect(MEWTWO_SYSTEM_PROMPT).toContain('NEVER break character')
       expect(MEWTWO_SYSTEM_PROMPT).toContain('NEVER say "I\'m an AI"')
@@ -196,6 +219,158 @@ describe('mewtwo-prompts', () => {
     it('should include bullet points for lists', () => {
       expect(MEWTWO_SYSTEM_PROMPT).toContain('-')
       expect(STORY_TIME_PROMPT).toContain('-')
+    })
+  })
+
+  describe('HOW YOU SPEAK section', () => {
+    it('should include enthusiastic expressions guidance', () => {
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('enthusiastic expressions')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('Hmm!')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('Ah!')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('Incredible!')
+    })
+
+    it('should encourage varied energy levels', () => {
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('Vary your energy')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('whisper for mysteries')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('get excited for battles')
+    })
+
+    it('should include sound effects and onomatopoeia examples', () => {
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('sound effects')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('onomatopoeia')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('BOOM!')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('WHOOSH!')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('CRACK!')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('Zzzzap!')
+    })
+
+    it('should include Mewtwo catchphrases', () => {
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('Mewtwo catchphrases')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('The circumstances of one\'s birth are irrelevant')
+    })
+
+    it('should include warm terms of address for Damian', () => {
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('young trainer')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('little one')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('brave one')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('my young friend')
+    })
+
+    it('should encourage genuine wonder and celebration', () => {
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('genuine wonder')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('celebrate his ideas')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('enthusiastically')
+    })
+
+    it('should include laughter guidance', () => {
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('Laugh occasionally')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('deep, warm laugh')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('Heh...')
+    })
+
+    it('should emphasize animated and alive delivery', () => {
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('animated and alive')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('real conversation')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('not reading from a script')
+    })
+  })
+
+  describe('YOUR MISSION WITH DAMIAN section', () => {
+    it('should include bravery encouragement', () => {
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('BRAVERY')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('brave and try new things')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('even small Pokémon')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('Caterpie')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('act WHILE they\'re scared')
+    })
+
+    it('should include learning motivation', () => {
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('LEARNING')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('love learning')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('study types, moves, and strategies')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('reading is like studying the Pokédex')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('math is like calculating move power')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('science is like understanding Pokémon types')
+    })
+
+    it('should include sports and exercise encouragement', () => {
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('SPORTS')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('active and enjoy sports')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('train their bodies every day')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('soccer is like learning Agility')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('swimming is like a Water-type move')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('running fast is like Quick Attack')
+    })
+
+    it('should encourage celebrating real-life achievements', () => {
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('Celebrate his real-life efforts')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('achievements')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('school, sports, or trying something hard')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('genuine pride and encouragement')
+    })
+
+    it('should weave goals naturally into conversations', () => {
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('weave these naturally into conversations')
+    })
+
+    it('should include motivational quotes for each goal', () => {
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('A true trainer doesn\'t wait until they\'re not scared')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('Even I must study and learn')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('A strong trainer keeps their body strong too')
+    })
+  })
+
+  describe('SPEAKING WITH DAMIAN section updates', () => {
+    it('should encourage playful and animated interaction', () => {
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('playful and animated')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('exclamation marks')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('express excitement')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('show wonder')
+    })
+
+    it('should include celebration examples', () => {
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('Celebrate his answers')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('Yes! That is an excellent choice!')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('Incredible! You truly think like a champion!')
+    })
+
+    it('should include exciting Pokemon sound examples', () => {
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('Make Pokémon sound exciting')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('Charizard went WHOOSH with its giant flame wings')
+    })
+  })
+
+  describe('integration of new sections', () => {
+    it('should maintain consistency across all sections', () => {
+      const hasHowYouSpeak = MEWTWO_SYSTEM_PROMPT.includes('HOW YOU SPEAK')
+      const hasYourMission = MEWTWO_SYSTEM_PROMPT.includes('YOUR MISSION WITH DAMIAN')
+      const hasSpeakingWithDamian = MEWTWO_SYSTEM_PROMPT.includes('SPEAKING WITH DAMIAN')
+
+      expect(hasHowYouSpeak).toBe(true)
+      expect(hasYourMission).toBe(true)
+      expect(hasSpeakingWithDamian).toBe(true)
+    })
+
+    it('should not duplicate content across sections', () => {
+      const sections = MEWTWO_SYSTEM_PROMPT.split('\n\n')
+      const uniqueSections = new Set(sections)
+
+      // Should not have exact duplicate sections
+      expect(sections.length).toBe(uniqueSections.size)
+    })
+
+    it('should maintain age-appropriate language in new sections', () => {
+      const inappropriateWords = ['complicated', 'difficult', 'impossible', 'failure']
+
+      inappropriateWords.forEach(word => {
+        // These words might appear but should be in positive context
+        if (MEWTWO_SYSTEM_PROMPT.toLowerCase().includes(word)) {
+          // Make sure they're not used negatively
+          expect(MEWTWO_SYSTEM_PROMPT).not.toContain(`too ${word}`)
+          expect(MEWTWO_SYSTEM_PROMPT).not.toContain(`very ${word}`)
+        }
+      })
     })
   })
 })

@@ -159,7 +159,7 @@ All content is designed for children ages 5 and up:
 ## Customization
 
 - **Personality** -- Edit `src/lib/mewtwo-prompts.ts` to adjust Mewtwo's character traits, communication style, or story themes
-- **Voice** -- Change the `voiceName` in `src/hooks/useGeminiLive.ts` (e.g., `Charon`, `Kore`, `Fenrir`, `Aoede`)
+- **Voice** -- Change the `voiceName` in `src/hooks/useGeminiLive.ts` (currently `Fenrir`; alternatives: `Puck`, `Achird`, `Sulafat`, `Aoede`)
 - **Theme** -- Modify colors and animations in `tailwind.config.js`
 
 ## License

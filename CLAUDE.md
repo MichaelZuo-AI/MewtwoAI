@@ -102,7 +102,7 @@ Mewtwo's personality is defined in `src/lib/mewtwo-prompts.ts`:
 - Short responses (2-4 sentences)
 - Encouraging and educational
 - Story time mode for longer narratives
-- Voice: Charon (deep, powerful — configured in `useGeminiLive.ts`)
+- Voice: Fenrir (excitable, kid-friendly — configured in `useGeminiLive.ts`)
 
 ### Browser Compatibility
 
