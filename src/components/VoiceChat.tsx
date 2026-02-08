@@ -1,100 +1,41 @@
 'use client';
 
-import { useState, useCallback, useEffect, useRef } from 'react';
-import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
-import { useTextToSpeech } from '@/hooks/useTextToSpeech';
-import { useConversation } from '@/hooks/useConversation';
+import { useEffect, useRef } from 'react';
+import { useGeminiLive } from '@/hooks/useGeminiLive';
 import MewtwoCharacter from './MewtwoCharacter';
 import ChatBubble from './ChatBubble';
-import { VoiceState } from '@/types/chat';
+import StoryTimeButton from './StoryTimeButton';
 
-interface VoiceChatProps {
-  isStoryMode?: boolean;
-}
+export default function VoiceChat() {
+  const {
+    voiceState,
+    connectionState,
+    messages,
+    error,
+    isSupported,
+    isStoryMode,
+    connect,
+    disconnect,
+    clearHistory,
+    switchStoryMode,
+  } = useGeminiLive();
 
-export default function VoiceChat({ isStoryMode = false }: VoiceChatProps) {
-  const [voiceState, setVoiceState] = useState<VoiceState>('idle');
-  const [autoMode, setAutoMode] = useState(false);
-  const { messages, isLoading, sendMessage, clearHistory } = useConversation();
-  const speakRef = useRef<(text: string) => void>(() => {});
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const handleSpeechResult = useCallback(
-    async (transcript: string) => {
-      if (!transcript.trim()) return;
-
-      setVoiceState('processing');
-
-      // Send message and get response
-      const response = await sendMessage(transcript, isStoryMode);
-
-      // Speak the response
-      if (response) {
-        speakRef.current(response);
-      }
-    },
-    [sendMessage, isStoryMode]
-  );
-
-  const speech = useSpeechRecognition({
-    onResult: handleSpeechResult,
-    onError: (error) => {
-      console.error('Speech recognition error:', error);
-      setVoiceState('idle');
-    },
-    continuous: autoMode,
-  });
-
-  const tts = useTextToSpeech({
-    onStart: () => setVoiceState('speaking'),
-    onEnd: () => {
-      setVoiceState('idle');
-      // Auto-listen again if in auto mode
-      if (autoMode) {
-        setTimeout(() => speech.startListening(), 1000);
-      }
-    },
-    onError: (error) => {
-      console.error('TTS error:', error);
-      setVoiceState('idle');
-    },
-  });
-
-  // Keep speakRef in sync so handleSpeechResult always uses latest tts.speak
-  useEffect(() => { speakRef.current = tts.speak; }, [tts.speak]);
-
+  // Auto-scroll to latest message
   useEffect(() => {
-    if (speech.isListening) {
-      setVoiceState('listening');
-    } else if (!tts.isSpeaking && !isLoading) {
-      setVoiceState('idle');
-    }
-  }, [speech.isListening, tts.isSpeaking, isLoading]);
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
-  const handlePushToTalk = () => {
-    if (speech.isListening) {
-      speech.stopListening();
+  const isConnected = connectionState === 'connected';
+  const isConnecting = connectionState === 'connecting';
+
+  const handleToggleConnection = () => {
+    if (isConnected) {
+      disconnect();
     } else {
-      tts.stop(); // Stop any current speech
-      speech.startListening();
+      connect();
     }
-  };
-
-  const handleToggleAutoMode = () => {
-    if (autoMode) {
-      setAutoMode(false);
-      speech.stopListening();
-      tts.stop();
-    } else {
-      setAutoMode(true);
-      speech.startListening();
-    }
-  };
-
-  const handleStopAll = () => {
-    speech.abortListening();
-    tts.stop();
-    setVoiceState('idle');
-    setAutoMode(false);
   };
 
   return (
@@ -121,41 +62,55 @@ export default function VoiceChat({ isStoryMode = false }: VoiceChatProps) {
         <div className="pb-32">
           {messages.length === 0 ? (
             <div className="text-center text-gray-500 mt-8 px-4">
-              <p className="text-lg">Press the microphone button to start talking with Mewtwo!</p>
+              <p className="text-lg">
+                {isConnected
+                  ? 'Start talking! Mewtwo is listening...'
+                  : 'Press the connect button to start talking with Mewtwo!'}
+              </p>
             </div>
           ) : (
             messages.map((message) => <ChatBubble key={message.id} message={message} />)
           )}
-          {isLoading && (
-            <div className="flex justify-start mb-4 px-4">
-              <div className="bg-mewtwo-light rounded-2xl px-4 py-3 rounded-bl-none">
-                <div className="flex space-x-2">
-                  <div className="w-2 h-2 bg-mewtwo-purple rounded-full animate-bounce" />
-                  <div className="w-2 h-2 bg-mewtwo-purple rounded-full animate-bounce delay-100" />
-                  <div className="w-2 h-2 bg-mewtwo-purple rounded-full animate-bounce delay-200" />
-                </div>
-              </div>
-            </div>
-          )}
+          <div ref={messagesEndRef} />
         </div>
       </div>
 
       {/* Controls */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-lg">
-        {/* Live Transcript */}
-        {speech.transcript && (
-          <div className="mb-3 px-4 py-2 bg-blue-50 rounded-lg text-center">
-            <p className="text-sm text-gray-600">You're saying:</p>
-            <p className="text-base font-medium text-gray-800">{speech.transcript}</p>
+        {/* Connection Status */}
+        {connectionState === 'error' && error && (
+          <div className="mb-3 px-4 py-2 bg-red-50 rounded-lg text-center">
+            <p className="text-sm text-red-600">{error}</p>
+          </div>
+        )}
+
+        {/* Voice State Indicator */}
+        {isConnected && (
+          <div className="mb-3 text-center">
+            <span
+              className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
+                voiceState === 'listening'
+                  ? 'bg-green-100 text-green-700'
+                  : voiceState === 'speaking'
+                    ? 'bg-purple-100 text-purple-700'
+                    : 'bg-gray-100 text-gray-600'
+              }`}
+            >
+              {voiceState === 'listening'
+                ? 'Listening...'
+                : voiceState === 'speaking'
+                  ? 'Mewtwo is speaking...'
+                  : 'Connected'}
+            </span>
           </div>
         )}
 
         {/* Button Controls */}
         <div className="flex justify-center items-center space-x-4">
-          {/* Push-to-Talk Button */}
+          {/* Connect / Disconnect Button */}
           <button
-            onClick={handlePushToTalk}
-            disabled={!speech.isSupported || autoMode}
+            onClick={handleToggleConnection}
+            disabled={!isSupported || isConnecting}
             className={`
               w-20 h-20 md:w-24 md:h-24 rounded-full
               flex items-center justify-center
@@ -163,50 +118,29 @@ export default function VoiceChat({ isStoryMode = false }: VoiceChatProps) {
               transition-all duration-200
               shadow-xl
               ${
-                speech.isListening
-                  ? 'bg-red-500 hover:bg-red-600 scale-110'
-                  : 'bg-blue-500 hover:bg-blue-600 active:scale-95'
+                isConnecting
+                  ? 'bg-yellow-500 animate-pulse'
+                  : isConnected
+                    ? 'bg-red-500 hover:bg-red-600 scale-110'
+                    : 'bg-blue-500 hover:bg-blue-600 active:scale-95'
               }
-              ${!speech.isSupported || autoMode ? 'opacity-50 cursor-not-allowed' : ''}
+              ${!isSupported ? 'opacity-50 cursor-not-allowed' : ''}
             `}
           >
-            {speech.isListening ? '🛑' : '🎤'}
-          </button>
-
-          {/* Auto Mode Toggle */}
-          <button
-            onClick={handleToggleAutoMode}
-            disabled={!speech.isSupported}
-            className={`
-              px-6 py-3 rounded-full font-semibold
-              transition-all duration-200
-              ${
-                autoMode
-                  ? 'bg-green-500 hover:bg-green-600 text-white'
-                  : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
-              }
-              ${!speech.isSupported ? 'opacity-50 cursor-not-allowed' : ''}
-            `}
-          >
-            {autoMode ? '🔄 Auto ON' : '🔄 Auto OFF'}
-          </button>
-
-          {/* Stop Button */}
-          <button
-            onClick={handleStopAll}
-            className="px-6 py-3 rounded-full font-semibold bg-red-500 hover:bg-red-600 text-white transition-all"
-          >
-            ⏹️ Stop
+            {isConnecting ? '...' : isConnected ? '🛑' : '🎤'}
           </button>
         </div>
 
         {/* Browser Support Warning */}
-        {!speech.isSupported && (
+        {!isSupported && (
           <div className="mt-3 text-center text-red-600 text-sm">
-            ⚠️ Speech recognition is not supported in your browser
+            Microphone is not supported in your browser. Try Chrome or Safari.
           </div>
         )}
       </div>
+
+      {/* Story Time Button */}
+      <StoryTimeButton onToggle={switchStoryMode} isStoryMode={isStoryMode} />
     </div>
   );
 }

@@ -6,90 +6,94 @@ import {
 
 describe('mewtwo-prompts', () => {
   describe('MEWTWO_SYSTEM_PROMPT', () => {
-    it('should contain character traits', () => {
-      expect(MEWTWO_SYSTEM_PROMPT).toContain('CHARACTER TRAITS')
-      expect(MEWTWO_SYSTEM_PROMPT).toContain('wise')
-      expect(MEWTWO_SYSTEM_PROMPT).toContain('powerful')
-      expect(MEWTWO_SYSTEM_PROMPT).toContain('kind')
+    it('should establish Mewtwo identity with Pokemon lore', () => {
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('Mewtwo')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('Psychic')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('Mew')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('New Island')
+    })
+
+    it('should include backstory and key memories', () => {
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('laboratory')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('clone')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('circumstances of one\'s birth')
+    })
+
+    it('should include Pokemon world knowledge', () => {
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('Psystrike')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('Shadow Ball')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('Pokédex')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('Ash Ketchum')
     })
 
     it('should mention the child by name', () => {
       expect(MEWTWO_SYSTEM_PROMPT).toContain('Damian')
     })
 
-    it('should specify age-appropriate language', () => {
+    it('should specify age-appropriate communication', () => {
       expect(MEWTWO_SYSTEM_PROMPT).toContain('5-year-old')
-      expect(MEWTWO_SYSTEM_PROMPT).toContain('simple, clear language')
-    })
-
-    it('should include communication style guidelines', () => {
-      expect(MEWTWO_SYSTEM_PROMPT).toContain('COMMUNICATION STYLE')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('simple words')
       expect(MEWTWO_SYSTEM_PROMPT).toContain('2-4 sentences')
-      expect(MEWTWO_SYSTEM_PROMPT).toContain('encouraging')
     })
 
-    it('should list topics Mewtwo enjoys', () => {
-      expect(MEWTWO_SYSTEM_PROMPT).toContain('TOPICS YOU ENJOY')
-      expect(MEWTWO_SYSTEM_PROMPT).toContain('Pokémon')
-      expect(MEWTWO_SYSTEM_PROMPT).toContain('Friendship')
-      expect(MEWTWO_SYSTEM_PROMPT).toContain('kindness')
+    it('should include personality traits', () => {
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('philosophical')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('Proud')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('Protective')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('courage')
     })
 
-    it('should include safety guidelines', () => {
-      expect(MEWTWO_SYSTEM_PROMPT).toContain('SAFETY GUIDELINES')
+    it('should enforce never breaking character', () => {
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('NEVER break character')
+      expect(MEWTWO_SYSTEM_PROMPT).toContain('NEVER say "I\'m an AI"')
+    })
+
+    it('should include safety rules', () => {
       expect(MEWTWO_SYSTEM_PROMPT).toContain('age-appropriate')
       expect(MEWTWO_SYSTEM_PROMPT).toContain('positive')
-      expect(MEWTWO_SYSTEM_PROMPT).toContain('scary or violent')
     })
 
     it('should be a non-empty string', () => {
       expect(typeof MEWTWO_SYSTEM_PROMPT).toBe('string')
       expect(MEWTWO_SYSTEM_PROMPT.length).toBeGreaterThan(0)
     })
-
-    it('should emphasize being a caring friend', () => {
-      expect(MEWTWO_SYSTEM_PROMPT).toContain('caring friend')
-    })
   })
 
   describe('STORY_TIME_PROMPT', () => {
-    it('should indicate story time mode', () => {
-      expect(STORY_TIME_PROMPT).toContain('Story Time mode')
+    it('should indicate story telling mode', () => {
+      expect(STORY_TIME_PROMPT).toContain('bedtime story')
     })
 
-    it('should specify story length requirements', () => {
+    it('should specify story length', () => {
       expect(STORY_TIME_PROMPT).toContain('3-5 minutes')
-      expect(STORY_TIME_PROMPT).toContain('300-500 words')
     })
 
-    it('should include story structure requirements', () => {
-      expect(STORY_TIME_PROMPT).toContain('beginning, middle, and end')
+    it('should require happy ending', () => {
+      expect(STORY_TIME_PROMPT).toContain('happy ending')
     })
 
-    it('should require Pokémon characters', () => {
-      expect(STORY_TIME_PROMPT).toContain('Pokémon characters')
+    it('should maintain Mewtwo voice', () => {
+      expect(STORY_TIME_PROMPT).toContain('Mewtwo')
+      expect(STORY_TIME_PROMPT).toContain('your voice')
     })
 
-    it('should require positive message', () => {
-      expect(STORY_TIME_PROMPT).toContain('positive message')
-      expect(STORY_TIME_PROMPT).toContain('happy, positive note')
+    it('should tell stories as personal memories', () => {
+      expect(STORY_TIME_PROMPT).toContain('YOUR memory')
+      expect(STORY_TIME_PROMPT).toContain('witnessed or experienced')
     })
 
-    it('should list story themes', () => {
-      expect(STORY_TIME_PROMPT).toContain('STORY THEMES')
-      expect(STORY_TIME_PROMPT).toContain('adventure')
-      expect(STORY_TIME_PROMPT).toContain('friends')
-      expect(STORY_TIME_PROMPT).toContain('teamwork')
+    it('should include Pokémon story ideas', () => {
+      expect(STORY_TIME_PROMPT).toContain('Caterpie')
+      expect(STORY_TIME_PROMPT).toContain('Pikachu')
+      expect(STORY_TIME_PROMPT).toContain('Cubone')
     })
 
-    it('should ensure stories are not scary', () => {
-      expect(STORY_TIME_PROMPT).toContain('not scary')
-      expect(STORY_TIME_PROMPT).toContain('exciting but not scary')
+    it('should keep stories not scary', () => {
+      expect(STORY_TIME_PROMPT).toContain('never scary')
     })
 
-    it('should instruct natural storytelling', () => {
-      expect(STORY_TIME_PROMPT).toContain('Begin the story naturally')
-      expect(STORY_TIME_PROMPT).toContain('as Mewtwo would tell it')
+    it('should target 5-year-old audience', () => {
+      expect(STORY_TIME_PROMPT).toContain('5 years old')
     })
 
     it('should be a non-empty string', () => {
@@ -104,9 +108,10 @@ describe('mewtwo-prompts', () => {
       expect(prompt).toBe(MEWTWO_SYSTEM_PROMPT)
     })
 
-    it('should return story prompt when isStoryMode is true', () => {
+    it('should include both prompts when isStoryMode is true', () => {
       const prompt = getSystemPrompt(true)
-      expect(prompt).toBe(STORY_TIME_PROMPT)
+      expect(prompt).toContain(MEWTWO_SYSTEM_PROMPT)
+      expect(prompt).toContain(STORY_TIME_PROMPT)
     })
 
     it('should default to normal prompt when no argument provided', () => {
@@ -117,11 +122,6 @@ describe('mewtwo-prompts', () => {
     it('should return normal prompt when isStoryMode is undefined', () => {
       const prompt = getSystemPrompt(undefined)
       expect(prompt).toBe(MEWTWO_SYSTEM_PROMPT)
-    })
-
-    it('should handle boolean values correctly', () => {
-      expect(getSystemPrompt(true)).toBe(STORY_TIME_PROMPT)
-      expect(getSystemPrompt(false)).toBe(MEWTWO_SYSTEM_PROMPT)
     })
 
     it('should always return a string', () => {
@@ -145,31 +145,24 @@ describe('mewtwo-prompts', () => {
       })
     })
 
-    it('should emphasize child safety in both prompts', () => {
+    it('should emphasize child safety', () => {
       expect(MEWTWO_SYSTEM_PROMPT).toContain('appropriate')
-      expect(STORY_TIME_PROMPT).toContain('appropriate')
     })
 
     it('should maintain consistent character voice', () => {
       expect(MEWTWO_SYSTEM_PROMPT).toContain('Mewtwo')
       expect(STORY_TIME_PROMPT).toContain('Mewtwo')
     })
-
-    it('should specify 5-year-old as target age', () => {
-      expect(MEWTWO_SYSTEM_PROMPT).toContain('5-year-old')
-      expect(STORY_TIME_PROMPT).toContain('5-year-old')
-    })
   })
 
   describe('edge cases', () => {
     it('should handle truthy non-boolean values', () => {
-      // In JavaScript, truthy values should behave like true
       const prompt = getSystemPrompt(1 as any)
-      expect(prompt).toBe(STORY_TIME_PROMPT)
+      expect(prompt).toContain(MEWTWO_SYSTEM_PROMPT)
+      expect(prompt).toContain(STORY_TIME_PROMPT)
     })
 
     it('should handle falsy non-boolean values', () => {
-      // In JavaScript, falsy values should behave like false
       const prompt = getSystemPrompt(0 as any)
       expect(prompt).toBe(MEWTWO_SYSTEM_PROMPT)
     })
