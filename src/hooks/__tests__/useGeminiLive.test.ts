@@ -62,6 +62,10 @@ jest.mock('@google/genai', () => ({
     live: { connect: mockConnect },
   })),
   Modality: { AUDIO: 'AUDIO' },
+  ActivityHandling: {
+    NO_INTERRUPTION: 'NO_INTERRUPTION',
+    START_OF_ACTIVITY_INTERRUPTS: 'START_OF_ACTIVITY_INTERRUPTS',
+  },
 }));
 
 import { useGeminiLive } from '../useGeminiLive';

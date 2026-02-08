@@ -41,6 +41,10 @@ export function useGeminiLive() {
   // C2 fix: guard against concurrent connect() calls
   const isConnectingRef = useRef(false);
 
+  // Story mode auto-continue: track how many continuations we've sent
+  const storyContinuationCountRef = useRef(0);
+  const MAX_STORY_CONTINUATIONS = 10;
+
   // C1 fix: track switchStoryMode timeout
   const storyModeTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
@@ -117,6 +121,7 @@ export function useGeminiLive() {
     if (!isReconnect) {
       isManualDisconnectRef.current = false;
       reconnectAttemptsRef.current = 0;
+      storyContinuationCountRef.current = 0;
     }
     setError(null);
     setConnectionState(isReconnect ? 'reconnecting' : 'connecting');
@@ -188,8 +193,34 @@ export function useGeminiLive() {
 
             // Turn complete — flush transcripts to storage
             if (sc.turnComplete) {
+              // Capture transcript before flushing (flush clears the ref)
+              const lastAssistantText = assistantTranscriptRef.current.trim();
+
               flushUserTranscript();
               flushAssistantTranscript();
+
+              // Story mode auto-continue: the model hits its turn length limit
+              // mid-story, so we send a continuation prompt to keep it going
+              if (
+                isStoryModeRef.current &&
+                sessionRef.current &&
+                storyContinuationCountRef.current < MAX_STORY_CONTINUATIONS
+              ) {
+                // Stop continuing if the story seems finished
+                const seemsDone = /the end|goodnight|sweet dreams|sleep well|close your eyes/i.test(lastAssistantText);
+                if (!seemsDone) {
+                  storyContinuationCountRef.current++;
+                  sessionRef.current.sendClientContent({
+                    turns: [
+                      {
+                        role: 'user',
+                        parts: [{ text: 'Keep going, tell me what happens next!' }],
+                      },
+                    ],
+                    turnComplete: true,
+                  });
+                }
+              }
             }
           },
           onerror: (e: ErrorEvent) => {
