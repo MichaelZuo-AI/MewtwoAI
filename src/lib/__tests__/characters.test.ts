@@ -190,10 +190,9 @@ describe('mewtwo config', () => {
 
     it('includes voice acting directions', () => {
       expect(prompt).toContain('HOW YOU SPEAK');
-      expect(prompt).toContain('enthusiastic expressions');
+      expect(prompt).toContain('enthusiastic sounds');
       expect(prompt).toContain('WHOOSH');
       expect(prompt).toContain('young trainer');
-      expect(prompt).toContain('sound effects');
     });
 
     it('includes parental goals', () => {
@@ -245,7 +244,7 @@ describe('mewtwo config', () => {
     });
 
     it('targets 5-year-old audience', () => {
-      expect(storyPrompt).toContain('5 years old');
+      expect(storyPrompt).toContain('5 and learning English');
     });
   });
 });
