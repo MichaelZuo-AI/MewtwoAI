@@ -15,4 +15,16 @@ export function getAllCharacters(): CharacterConfig[] {
   return Object.values(CHARACTERS);
 }
 
+export function getNextCharacter(currentId: string): CharacterConfig {
+  const chars = getAllCharacters();
+  const idx = chars.findIndex(c => c.id === currentId);
+  return chars[(idx + 1) % chars.length];
+}
+
+export function getPreviousCharacter(currentId: string): CharacterConfig {
+  const chars = getAllCharacters();
+  const idx = chars.findIndex(c => c.id === currentId);
+  return chars[(idx - 1 + chars.length) % chars.length];
+}
+
 export { CHARACTERS };

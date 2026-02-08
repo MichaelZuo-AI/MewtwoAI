@@ -1,4 +1,4 @@
-import { getCharacter, getAllCharacters, CHARACTERS } from '../characters';
+import { getCharacter, getAllCharacters, getNextCharacter, getPreviousCharacter, CHARACTERS } from '../characters';
 import { mewtwo } from '../characters/mewtwo';
 import { kirby } from '../characters/kirby';
 
@@ -32,6 +32,40 @@ describe('character registry', () => {
 
     it('returns undefined for empty string', () => {
       expect(getCharacter('')).toBeUndefined();
+    });
+  });
+
+  describe('getNextCharacter', () => {
+    it('returns kirby after mewtwo', () => {
+      expect(getNextCharacter('mewtwo').id).toBe('kirby');
+    });
+
+    it('wraps around: returns mewtwo after kirby', () => {
+      expect(getNextCharacter('kirby').id).toBe('mewtwo');
+    });
+
+    it('returns a valid CharacterConfig', () => {
+      const next = getNextCharacter('mewtwo');
+      expect(next.name).toBeDefined();
+      expect(next.voice).toBeDefined();
+      expect(next.theme).toBeDefined();
+    });
+  });
+
+  describe('getPreviousCharacter', () => {
+    it('returns mewtwo before kirby', () => {
+      expect(getPreviousCharacter('kirby').id).toBe('mewtwo');
+    });
+
+    it('wraps around: returns kirby before mewtwo', () => {
+      expect(getPreviousCharacter('mewtwo').id).toBe('kirby');
+    });
+
+    it('returns a valid CharacterConfig', () => {
+      const prev = getPreviousCharacter('kirby');
+      expect(prev.name).toBeDefined();
+      expect(prev.voice).toBeDefined();
+      expect(prev.theme).toBeDefined();
     });
   });
 

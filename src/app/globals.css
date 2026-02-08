@@ -151,6 +151,26 @@ button {
   animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
+/* ===== Character Slide Transitions ===== */
+
+@keyframes slide-enter-from-left {
+  from { transform: translateX(-100vw); opacity: 0.5; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slide-enter-from-right {
+  from { transform: translateX(100vw); opacity: 0.5; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.slide-enter-from-left {
+  animation: slide-enter-from-left 250ms ease-out;
+}
+
+.slide-enter-from-right {
+  animation: slide-enter-from-right 250ms ease-out;
+}
+
 @keyframes bounce {
   0%, 100% {
     transform: translateY(-5%);

@@ -61,6 +61,16 @@ jest.mock('../SettingsMenu', () => {
   };
 });
 
+jest.mock('../CharacterDots', () => {
+  return function MockCharacterDots({ characters, activeId }: any) {
+    return (
+      <div data-testid="character-dots" data-active={activeId} data-count={characters.length}>
+        dots
+      </div>
+    );
+  };
+});
+
 jest.mock('../StoryTimeButton', () => {
   return function MockStoryTimeButton({ onToggle, isStoryMode }: any) {
     return (
@@ -141,6 +151,13 @@ describe('VoiceChat', () => {
     it('renders back button', () => {
       render(<VoiceChat character={mewtwo} onBack={mockOnBack} />);
       expect(screen.getByLabelText('Back to character select')).toBeInTheDocument();
+    });
+
+    it('renders character dots', () => {
+      render(<VoiceChat character={mewtwo} onBack={mockOnBack} />);
+      const dots = screen.getByTestId('character-dots');
+      expect(dots).toBeInTheDocument();
+      expect(dots).toHaveAttribute('data-active', 'mewtwo');
     });
 
     it('does not render chat peek when no messages', () => {

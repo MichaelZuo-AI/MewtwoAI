@@ -12,6 +12,8 @@ import ChatDrawer from './ChatDrawer';
 import SettingsMenu from './SettingsMenu';
 import StoryTimeButton from './StoryTimeButton';
 import { ArrowLeftIcon } from './Icons';
+import CharacterDots from './CharacterDots';
+import { getAllCharacters } from '@/lib/characters';
 
 interface VoiceChatProps {
   character: CharacterConfig;
@@ -75,6 +77,11 @@ export default function VoiceChat({ character, onBack }: VoiceChatProps) {
       {/* Hero zone — character takes ~60% of screen */}
       <div className="flex-1 flex items-center justify-center min-h-0">
         <CharacterDisplay character={character} state={voiceState} connectionState={connectionState} />
+      </div>
+
+      {/* Character dots */}
+      <div className="flex justify-center mb-2">
+        <CharacterDots characters={getAllCharacters()} activeId={character.id} />
       </div>
 
       {/* Error banner (subtle, no text wall) */}
