@@ -96,15 +96,15 @@ describe('ChatBubble', () => {
     })
   })
 
-  describe('styling', () => {
-    it('should apply user message styles', () => {
+  describe('dark theme styling', () => {
+    it('should apply dark user message styles', () => {
       const { container } = render(<ChatBubble message={baseMessage} />)
 
-      const bubble = container.querySelector('.bg-blue-500')
+      const bubble = container.querySelector('[class*="bg-purple-500"]')
       expect(bubble).toBeInTheDocument()
     })
 
-    it('should apply assistant message styles', () => {
+    it('should apply dark assistant message styles', () => {
       const assistantMessage: Message = {
         ...baseMessage,
         role: 'assistant',
@@ -112,10 +112,43 @@ describe('ChatBubble', () => {
 
       const { container } = render(<ChatBubble message={assistantMessage} />)
 
-      const bubble = container.querySelector('.bg-mewtwo-light')
+      const bubble = container.querySelector('[class*="bg-white\\/15"]')
       expect(bubble).toBeInTheDocument()
     })
 
+    it('should apply white text for assistant messages', () => {
+      const assistantMessage: Message = {
+        ...baseMessage,
+        role: 'assistant',
+      }
+
+      const { container } = render(<ChatBubble message={assistantMessage} />)
+
+      const bubble = container.querySelector('[class*="text-white\\/90"]')
+      expect(bubble).toBeInTheDocument()
+    })
+
+    it('should apply subtle timestamp for user messages', () => {
+      render(<ChatBubble message={baseMessage} />)
+
+      const timestamp = screen.getByText(/\d{1,2}:\d{2}/)
+      expect(timestamp.className).toContain('text-white/40')
+    })
+
+    it('should apply subtle timestamp for assistant messages', () => {
+      const assistantMessage: Message = {
+        ...baseMessage,
+        role: 'assistant',
+      }
+
+      render(<ChatBubble message={assistantMessage} />)
+
+      const timestamp = screen.getByText(/\d{1,2}:\d{2}/)
+      expect(timestamp.className).toContain('text-white/30')
+    })
+  })
+
+  describe('layout', () => {
     it('should justify user messages to the right', () => {
       const { container } = render(<ChatBubble message={baseMessage} />)
 
@@ -151,13 +184,6 @@ describe('ChatBubble', () => {
       const { container } = render(<ChatBubble message={assistantMessage} />)
 
       const bubble = container.querySelector('.rounded-bl-none')
-      expect(bubble).toBeInTheDocument()
-    })
-
-    it('should apply shadow styling', () => {
-      const { container } = render(<ChatBubble message={baseMessage} />)
-
-      const bubble = container.querySelector('.shadow-lg')
       expect(bubble).toBeInTheDocument()
     })
 
@@ -228,13 +254,6 @@ describe('ChatBubble', () => {
 
       const content = container.querySelector('.text-base')
       expect(content).toBeInTheDocument()
-    })
-
-    it('should have adequate contrast for user messages', () => {
-      const { container } = render(<ChatBubble message={baseMessage} />)
-
-      const bubble = container.querySelector('.text-white')
-      expect(bubble).toBeInTheDocument()
     })
 
     it('should have visible timestamp', () => {

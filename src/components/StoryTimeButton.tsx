@@ -1,5 +1,7 @@
 'use client';
 
+import { BookIcon } from './Icons';
+
 interface StoryTimeButtonProps {
   onToggle: (isStoryMode: boolean) => void;
   isStoryMode: boolean;
@@ -9,21 +11,20 @@ export default function StoryTimeButton({ onToggle, isStoryMode }: StoryTimeButt
   return (
     <button
       onClick={() => onToggle(!isStoryMode)}
+      aria-label={isStoryMode ? 'Exit story mode' : 'Start story mode'}
       className={`
-        fixed top-20 right-4 md:top-24 md:right-6
-        px-6 py-3 rounded-full
-        font-bold text-lg
-        shadow-lg
+        w-12 h-12 rounded-full
+        flex items-center justify-center
         transition-all duration-300
-        transform hover:scale-105 active:scale-95
+        transform active:scale-90
         ${
           isStoryMode
-            ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white'
-            : 'bg-gradient-to-r from-purple-400 to-pink-500 text-white'
+            ? 'bg-yellow-500/30 text-yellow-300 shadow-[0_0_16px_4px_rgba(234,179,8,0.3)]'
+            : 'bg-white/10 text-white/70 hover:bg-white/20'
         }
       `}
     >
-      {isStoryMode ? '📖 Story Mode ON' : '📖 Story Time'}
+      <BookIcon className="w-6 h-6" />
     </button>
   );
 }

@@ -20,10 +20,9 @@ export default function ChatBubble({ message }: ChatBubbleProps) {
           max-w-[80%] md:max-w-[70%] rounded-2xl px-4 py-3
           ${
             isUser
-              ? 'bg-blue-500 text-white rounded-br-none'
-              : 'bg-mewtwo-light text-mewtwo-dark rounded-bl-none'
+              ? 'bg-purple-500/30 text-white rounded-br-none'
+              : 'bg-white/15 text-white/90 rounded-bl-none'
           }
-          shadow-lg
         `}
       >
         <p className="text-base md:text-lg leading-relaxed whitespace-pre-wrap">
@@ -32,7 +31,7 @@ export default function ChatBubble({ message }: ChatBubbleProps) {
         <p
           className={`
             text-xs mt-2
-            ${isUser ? 'text-blue-100' : 'text-mewtwo-dark opacity-70'}
+            ${isUser ? 'text-white/40' : 'text-white/30'}
           `}
         >
           {timestamp}

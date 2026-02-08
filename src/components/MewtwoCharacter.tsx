@@ -1,28 +1,14 @@
 'use client';
 
 import Image from 'next/image';
-import { VoiceState } from '@/types/chat';
+import { VoiceState, LiveConnectionState } from '@/types/chat';
 
 interface MewtwoCharacterProps {
   state: VoiceState;
+  connectionState?: LiveConnectionState;
 }
 
-export default function MewtwoCharacter({ state }: MewtwoCharacterProps) {
-  const getStateText = () => {
-    switch (state) {
-      case 'idle':
-        return 'Mewtwo is ready';
-      case 'listening':
-        return 'Mewtwo is listening...';
-      case 'speaking':
-        return 'Mewtwo is speaking...';
-      case 'processing':
-        return 'Mewtwo is thinking...';
-      default:
-        return 'Mewtwo is ready';
-    }
-  };
-
+export default function MewtwoCharacter({ state, connectionState }: MewtwoCharacterProps) {
   const getAuraColor = () => {
     switch (state) {
       case 'listening':
@@ -36,13 +22,28 @@ export default function MewtwoCharacter({ state }: MewtwoCharacterProps) {
     }
   };
 
+  const getRingColor = () => {
+    switch (state) {
+      case 'listening':
+        return 'bg-green-400';
+      case 'speaking':
+        return 'bg-purple-400';
+      case 'processing':
+        return 'bg-yellow-400';
+      default:
+        return 'bg-purple-400/50';
+    }
+  };
+
+  const isActive = connectionState === 'connected' && state !== 'idle';
+
   return (
-    <div className="flex flex-col items-center justify-center py-4">
+    <div className="flex flex-col items-center justify-center">
       {/* Character container with aura */}
       <div className="relative">
-        {/* Psychic aura glow */}
+        {/* Psychic aura glow — larger for immersive feel */}
         <div
-          className={`absolute inset-0 rounded-full blur-2xl transition-all duration-700 ${
+          className={`absolute -inset-8 rounded-full blur-3xl transition-all duration-700 ${
             state === 'speaking' ? 'mewtwo-aura-speaking' :
             state === 'listening' ? 'mewtwo-aura-listening' :
             state === 'processing' ? 'mewtwo-aura-processing' :
@@ -51,9 +52,9 @@ export default function MewtwoCharacter({ state }: MewtwoCharacterProps) {
           style={{ background: getAuraColor() }}
         />
 
-        {/* Mewtwo image */}
+        {/* Mewtwo image — hero-sized */}
         <div
-          className={`relative w-48 h-48 md:w-64 md:h-64 ${
+          className={`relative w-64 h-64 md:w-80 md:h-80 lg:w-96 lg:h-96 ${
             state === 'idle' ? 'mewtwo-float' :
             state === 'listening' ? 'mewtwo-listen' :
             state === 'speaking' ? 'mewtwo-speak' :
@@ -70,79 +71,19 @@ export default function MewtwoCharacter({ state }: MewtwoCharacterProps) {
         </div>
       </div>
 
-      {/* State indicator */}
-      <div className="mt-4 text-center">
-        <p className="text-lg md:text-xl font-semibold text-mewtwo-purple">
-          {getStateText()}
-        </p>
-      </div>
-
-      <style jsx>{`
-        @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-12px); }
-        }
-
-        @keyframes listen-pulse {
-          0%, 100% { transform: scale(1) translateY(-4px); }
-          50% { transform: scale(1.05) translateY(-8px); }
-        }
-
-        @keyframes speak-bounce {
-          0%, 100% { transform: translateY(0px) rotate(0deg); }
-          25% { transform: translateY(-16px) rotate(-2deg); }
-          50% { transform: translateY(-6px) rotate(0deg); }
-          75% { transform: translateY(-14px) rotate(2deg); }
-        }
-
-        @keyframes think-sway {
-          0%, 100% { transform: translateY(-4px) rotate(0deg); }
-          25% { transform: translateY(-8px) rotate(-3deg); }
-          75% { transform: translateY(-8px) rotate(3deg); }
-        }
-
-        @keyframes aura-pulse {
-          0%, 100% { transform: scale(1); opacity: 0.3; }
-          50% { transform: scale(1.15); opacity: 0.6; }
-        }
-
-        @keyframes aura-intense {
-          0%, 100% { transform: scale(1); opacity: 0.4; }
-          50% { transform: scale(1.25); opacity: 0.7; }
-        }
-
-        .mewtwo-float {
-          animation: float 3s ease-in-out infinite;
-        }
-
-        .mewtwo-listen {
-          animation: listen-pulse 2s ease-in-out infinite;
-        }
-
-        .mewtwo-speak {
-          animation: speak-bounce 1.2s ease-in-out infinite;
-        }
-
-        .mewtwo-think {
-          animation: think-sway 2.5s ease-in-out infinite;
-        }
-
-        .mewtwo-aura-idle {
-          animation: aura-pulse 4s ease-in-out infinite;
-        }
-
-        .mewtwo-aura-listening {
-          animation: aura-pulse 2s ease-in-out infinite;
-        }
-
-        .mewtwo-aura-speaking {
-          animation: aura-intense 0.8s ease-in-out infinite;
-        }
-
-        .mewtwo-aura-processing {
-          animation: aura-pulse 3s ease-in-out infinite;
-        }
-      `}</style>
+      {/* Voice state ring indicator (replaces text labels) */}
+      {isActive && (
+        <div className="relative mt-4 flex items-center justify-center" data-testid="voice-ring">
+          {/* Expanding ring */}
+          <div
+            className={`absolute w-8 h-8 rounded-full ${getRingColor()} ${
+              state === 'speaking' ? 'voice-ring-fast' : 'voice-ring'
+            }`}
+          />
+          {/* Solid center dot */}
+          <div className={`w-3 h-3 rounded-full ${getRingColor()}`} />
+        </div>
+      )}
     </div>
   );
 }

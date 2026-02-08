@@ -3,28 +3,6 @@ import MewtwoCharacter from '../MewtwoCharacter'
 import { VoiceState } from '@/types/chat'
 
 describe('MewtwoCharacter', () => {
-  describe('state indicator text', () => {
-    it('should show "Mewtwo is ready" when idle', () => {
-      render(<MewtwoCharacter state="idle" />)
-      expect(screen.getByText('Mewtwo is ready')).toBeInTheDocument()
-    })
-
-    it('should show "Mewtwo is listening..." when listening', () => {
-      render(<MewtwoCharacter state="listening" />)
-      expect(screen.getByText('Mewtwo is listening...')).toBeInTheDocument()
-    })
-
-    it('should show "Mewtwo is speaking..." when speaking', () => {
-      render(<MewtwoCharacter state="speaking" />)
-      expect(screen.getByText('Mewtwo is speaking...')).toBeInTheDocument()
-    })
-
-    it('should show "Mewtwo is thinking..." when processing', () => {
-      render(<MewtwoCharacter state="processing" />)
-      expect(screen.getByText('Mewtwo is thinking...')).toBeInTheDocument()
-    })
-  })
-
   describe('rendering', () => {
     it('should render the Mewtwo image', () => {
       render(<MewtwoCharacter state="idle" />)
@@ -34,7 +12,15 @@ describe('MewtwoCharacter', () => {
 
     it('should render the aura element', () => {
       const { container } = render(<MewtwoCharacter state="idle" />)
-      expect(container.querySelector('.blur-2xl')).toBeInTheDocument()
+      expect(container.querySelector('.blur-3xl')).toBeInTheDocument()
+    })
+
+    it('should not render text labels', () => {
+      render(<MewtwoCharacter state="idle" />)
+      expect(screen.queryByText('Mewtwo is ready')).not.toBeInTheDocument()
+      expect(screen.queryByText('Mewtwo is listening...')).not.toBeInTheDocument()
+      expect(screen.queryByText('Mewtwo is speaking...')).not.toBeInTheDocument()
+      expect(screen.queryByText('Mewtwo is thinking...')).not.toBeInTheDocument()
     })
   })
 
@@ -82,6 +68,64 @@ describe('MewtwoCharacter', () => {
     })
   })
 
+  describe('voice state ring indicator', () => {
+    it('should not show ring when idle and connected', () => {
+      render(<MewtwoCharacter state="idle" connectionState="connected" />)
+      expect(screen.queryByTestId('voice-ring')).not.toBeInTheDocument()
+    })
+
+    it('should not show ring when disconnected', () => {
+      render(<MewtwoCharacter state="listening" connectionState="disconnected" />)
+      expect(screen.queryByTestId('voice-ring')).not.toBeInTheDocument()
+    })
+
+    it('should not show ring when connectionState is not provided', () => {
+      render(<MewtwoCharacter state="listening" />)
+      expect(screen.queryByTestId('voice-ring')).not.toBeInTheDocument()
+    })
+
+    it('should show ring when listening and connected', () => {
+      render(<MewtwoCharacter state="listening" connectionState="connected" />)
+      expect(screen.getByTestId('voice-ring')).toBeInTheDocument()
+    })
+
+    it('should show ring when speaking and connected', () => {
+      render(<MewtwoCharacter state="speaking" connectionState="connected" />)
+      expect(screen.getByTestId('voice-ring')).toBeInTheDocument()
+    })
+
+    it('should show ring when processing and connected', () => {
+      render(<MewtwoCharacter state="processing" connectionState="connected" />)
+      expect(screen.getByTestId('voice-ring')).toBeInTheDocument()
+    })
+
+    it('should apply green ring color when listening', () => {
+      const { container } = render(<MewtwoCharacter state="listening" connectionState="connected" />)
+      expect(container.querySelector('.bg-green-400')).toBeInTheDocument()
+    })
+
+    it('should apply purple ring color when speaking', () => {
+      const { container } = render(<MewtwoCharacter state="speaking" connectionState="connected" />)
+      expect(container.querySelector('.bg-purple-400')).toBeInTheDocument()
+    })
+
+    it('should apply yellow ring color when processing', () => {
+      const { container } = render(<MewtwoCharacter state="processing" connectionState="connected" />)
+      expect(container.querySelector('.bg-yellow-400')).toBeInTheDocument()
+    })
+
+    it('should use fast ring animation when speaking', () => {
+      const { container } = render(<MewtwoCharacter state="speaking" connectionState="connected" />)
+      expect(container.querySelector('.voice-ring-fast')).toBeInTheDocument()
+    })
+
+    it('should use normal ring animation when listening', () => {
+      const { container } = render(<MewtwoCharacter state="listening" connectionState="connected" />)
+      expect(container.querySelector('.voice-ring')).toBeInTheDocument()
+      expect(container.querySelector('.voice-ring-fast')).not.toBeInTheDocument()
+    })
+  })
+
   describe('state transitions', () => {
     it('should update animation when state changes', () => {
       const { container, rerender } = render(<MewtwoCharacter state="idle" />)
@@ -90,15 +134,6 @@ describe('MewtwoCharacter', () => {
       rerender(<MewtwoCharacter state="listening" />)
       expect(container.querySelector('.mewtwo-listen')).toBeInTheDocument()
       expect(container.querySelector('.mewtwo-float')).not.toBeInTheDocument()
-    })
-
-    it('should update text when state changes', () => {
-      const { rerender } = render(<MewtwoCharacter state="idle" />)
-      expect(screen.getByText('Mewtwo is ready')).toBeInTheDocument()
-
-      rerender(<MewtwoCharacter state="speaking" />)
-      expect(screen.getByText('Mewtwo is speaking...')).toBeInTheDocument()
-      expect(screen.queryByText('Mewtwo is ready')).not.toBeInTheDocument()
     })
   })
 
@@ -113,23 +148,18 @@ describe('MewtwoCharacter', () => {
       expect(container.querySelector('.items-center.justify-center')).toBeInTheDocument()
     })
 
-    it('should have responsive image size', () => {
+    it('should have hero-sized image', () => {
       const { container } = render(<MewtwoCharacter state="idle" />)
-      expect(container.querySelector('.w-48.md\\:w-64')).toBeInTheDocument()
+      expect(container.querySelector('.w-64.md\\:w-80.lg\\:w-96')).toBeInTheDocument()
+    })
+
+    it('should have larger aura with -inset-8', () => {
+      const { container } = render(<MewtwoCharacter state="idle" />)
+      expect(container.querySelector('.-inset-8')).toBeInTheDocument()
     })
   })
 
   describe('styling', () => {
-    it('should style state text with Mewtwo purple', () => {
-      const { container } = render(<MewtwoCharacter state="idle" />)
-      expect(container.querySelector('.text-mewtwo-purple')).toBeInTheDocument()
-    })
-
-    it('should apply font weight to state text', () => {
-      const { container } = render(<MewtwoCharacter state="idle" />)
-      expect(container.querySelector('.font-semibold')).toBeInTheDocument()
-    })
-
     it('should apply drop shadow to image', () => {
       const { container } = render(<MewtwoCharacter state="idle" />)
       expect(container.querySelector('.drop-shadow-2xl')).toBeInTheDocument()
@@ -138,8 +168,9 @@ describe('MewtwoCharacter', () => {
 
   describe('edge cases', () => {
     it('should handle unknown state values', () => {
-      render(<MewtwoCharacter state={'unknown' as VoiceState} />)
-      expect(screen.getByText('Mewtwo is ready')).toBeInTheDocument()
+      const { container } = render(<MewtwoCharacter state={'unknown' as VoiceState} />)
+      expect(container.querySelector('.mewtwo-float')).not.toBeInTheDocument()
+      expect(screen.getByAltText('Mewtwo')).toBeInTheDocument()
     })
 
     it('should maintain structure across all states', () => {
@@ -147,7 +178,6 @@ describe('MewtwoCharacter', () => {
       states.forEach(state => {
         const { container, unmount } = render(<MewtwoCharacter state={state} />)
         expect(container.querySelector('img[alt="Mewtwo"]')).toBeInTheDocument()
-        expect(container.textContent).toContain('Mewtwo')
         unmount()
       })
     })

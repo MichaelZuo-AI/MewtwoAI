@@ -2,16 +2,25 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import StoryTimeButton from '../StoryTimeButton'
 
 describe('StoryTimeButton', () => {
-  it('should render with story mode off', () => {
+  it('should render with story mode off aria-label', () => {
     render(<StoryTimeButton onToggle={jest.fn()} isStoryMode={false} />)
-
-    expect(screen.getByText(/Story Time/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Start story mode' })).toBeInTheDocument()
   })
 
-  it('should render with story mode on', () => {
+  it('should render with story mode on aria-label', () => {
     render(<StoryTimeButton onToggle={jest.fn()} isStoryMode={true} />)
+    expect(screen.getByRole('button', { name: 'Exit story mode' })).toBeInTheDocument()
+  })
 
-    expect(screen.getByText(/Story Mode ON/)).toBeInTheDocument()
+  it('should not render text labels', () => {
+    render(<StoryTimeButton onToggle={jest.fn()} isStoryMode={false} />)
+    expect(screen.queryByText(/Story Time/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Story Mode ON/)).not.toBeInTheDocument()
+  })
+
+  it('should render SVG icon', () => {
+    const { container } = render(<StoryTimeButton onToggle={jest.fn()} isStoryMode={false} />)
+    expect(container.querySelector('svg')).toBeInTheDocument()
   })
 
   it('should call onToggle with true when turning on', () => {
@@ -46,12 +55,21 @@ describe('StoryTimeButton', () => {
     expect(offClasses).not.toEqual(onClasses)
   })
 
-  it('should be positioned fixed', () => {
+  it('should be a circle button', () => {
     const { container } = render(
       <StoryTimeButton onToggle={jest.fn()} isStoryMode={false} />
     )
 
-    const button = container.querySelector('.fixed')
+    const button = container.querySelector('.rounded-full.w-12.h-12')
     expect(button).toBeInTheDocument()
+  })
+
+  it('should apply glow effect when active', () => {
+    const { container } = render(
+      <StoryTimeButton onToggle={jest.fn()} isStoryMode={true} />
+    )
+
+    const button = container.querySelector('button')
+    expect(button?.className).toContain('bg-yellow-500/30')
   })
 })

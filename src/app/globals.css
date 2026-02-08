@@ -22,15 +22,6 @@ html {
   scroll-behavior: smooth;
 }
 
-/* Animation delays */
-.delay-100 {
-  animation-delay: 0.1s;
-}
-
-.delay-200 {
-  animation-delay: 0.2s;
-}
-
 /* Touch-friendly tap highlights */
 button {
   -webkit-tap-highlight-color: transparent;
@@ -45,21 +36,121 @@ button {
   user-select: none;
 }
 
-/* Loading animation */
+/* ===== Mewtwo Character Animations ===== */
+
+@keyframes mewtwo-float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-12px); }
+}
+
+@keyframes mewtwo-listen-pulse {
+  0%, 100% { transform: scale(1) translateY(-4px); }
+  50% { transform: scale(1.05) translateY(-8px); }
+}
+
+@keyframes mewtwo-speak-bounce {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  25% { transform: translateY(-16px) rotate(-2deg); }
+  50% { transform: translateY(-6px) rotate(0deg); }
+  75% { transform: translateY(-14px) rotate(2deg); }
+}
+
+@keyframes mewtwo-think-sway {
+  0%, 100% { transform: translateY(-4px) rotate(0deg); }
+  25% { transform: translateY(-8px) rotate(-3deg); }
+  75% { transform: translateY(-8px) rotate(3deg); }
+}
+
+@keyframes aura-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.3; }
+  50% { transform: scale(1.15); opacity: 0.6; }
+}
+
+@keyframes aura-intense {
+  0%, 100% { transform: scale(1); opacity: 0.4; }
+  50% { transform: scale(1.25); opacity: 0.7; }
+}
+
+.mewtwo-float {
+  animation: mewtwo-float 3s ease-in-out infinite;
+}
+
+.mewtwo-listen {
+  animation: mewtwo-listen-pulse 2s ease-in-out infinite;
+}
+
+.mewtwo-speak {
+  animation: mewtwo-speak-bounce 1.2s ease-in-out infinite;
+}
+
+.mewtwo-think {
+  animation: mewtwo-think-sway 2.5s ease-in-out infinite;
+}
+
+.mewtwo-aura-idle {
+  animation: aura-pulse 4s ease-in-out infinite;
+}
+
+.mewtwo-aura-listening {
+  animation: aura-pulse 2s ease-in-out infinite;
+}
+
+.mewtwo-aura-speaking {
+  animation: aura-intense 0.8s ease-in-out infinite;
+}
+
+.mewtwo-aura-processing {
+  animation: aura-pulse 3s ease-in-out infinite;
+}
+
+/* ===== Voice State Ring ===== */
+
+@keyframes ring-expand {
+  0% { transform: scale(1); opacity: 0.6; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+
+.voice-ring {
+  animation: ring-expand 1.5s ease-out infinite;
+}
+
+.voice-ring-fast {
+  animation: ring-expand 1s ease-out infinite;
+}
+
+/* ===== Mic Button Glow ===== */
+
+@keyframes glow-breathe {
+  0%, 100% { box-shadow: 0 0 20px 4px rgba(139, 92, 246, 0.4); }
+  50% { box-shadow: 0 0 40px 12px rgba(139, 92, 246, 0.6); }
+}
+
+.mic-glow {
+  animation: glow-breathe 2s ease-in-out infinite;
+}
+
+/* ===== Chat Drawer ===== */
+
+@keyframes slide-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
+}
+
+/* ===== General Animations ===== */
+
 @keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
 .animate-pulse {
   animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-/* Bounce animation */
 @keyframes bounce {
   0%, 100% {
     transform: translateY(-5%);

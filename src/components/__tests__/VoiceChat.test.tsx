@@ -1,19 +1,59 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import VoiceChat from '../VoiceChat';
 
 // Mock child components
 jest.mock('../MewtwoCharacter', () => {
-  return function MockMewtwoCharacter({ state }: { state: string }) {
-    return <div data-testid="mewtwo-character" data-state={state}>Mewtwo</div>;
+  return function MockMewtwoCharacter({ state, connectionState }: { state: string; connectionState?: string }) {
+    return <div data-testid="mewtwo-character" data-state={state} data-connection={connectionState}>Mewtwo</div>;
   };
 });
 
-jest.mock('../ChatBubble', () => {
-  return function MockChatBubble({ message }: any) {
+jest.mock('../MicButton', () => {
+  return function MockMicButton({ connectionState, isSupported, onToggle }: any) {
     return (
-      <div data-testid="chat-bubble" data-role={message.role}>
-        {message.content}
+      <button
+        data-testid="mic-button"
+        data-connection={connectionState}
+        disabled={!isSupported}
+        onClick={onToggle}
+        aria-label={connectionState === 'connected' ? 'Stop talking' : 'Start talking'}
+      >
+        mic
+      </button>
+    );
+  };
+});
+
+jest.mock('../ChatPeek', () => {
+  return function MockChatPeek({ messages, onOpen }: any) {
+    if (!messages.length) return null;
+    return (
+      <button data-testid="chat-peek" onClick={onOpen}>
+        {messages[messages.length - 1].content}
+      </button>
+    );
+  };
+});
+
+jest.mock('../ChatDrawer', () => {
+  return function MockChatDrawer({ messages, isOpen, onClose, onClearHistory }: any) {
+    if (!isOpen) return null;
+    return (
+      <div data-testid="chat-drawer">
+        <button data-testid="drawer-close" onClick={onClose}>Close</button>
+        <button data-testid="drawer-clear" onClick={onClearHistory}>Clear</button>
+        <div data-testid="drawer-messages">{messages.length} messages</div>
       </div>
+    );
+  };
+});
+
+jest.mock('../SettingsMenu', () => {
+  return function MockSettingsMenu({ onClearHistory }: any) {
+    return (
+      <button data-testid="settings-menu" onClick={onClearHistory} aria-label="Settings">
+        settings
+      </button>
     );
   };
 });
@@ -24,8 +64,9 @@ jest.mock('../StoryTimeButton', () => {
       <button
         data-testid="story-time-button"
         onClick={() => onToggle(!isStoryMode)}
+        aria-label={isStoryMode ? 'Exit story mode' : 'Start story mode'}
       >
-        {isStoryMode ? 'Exit Story' : 'Story Time'}
+        story
       </button>
     );
   };
@@ -58,9 +99,6 @@ describe('VoiceChat', () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
-    // Mock scrollIntoView (not implemented in jsdom)
-    Element.prototype.scrollIntoView = jest.fn();
-
     mockUseGeminiLive.mockReturnValue({
       voiceState: 'idle',
       connectionState: 'disconnected',
@@ -76,19 +114,19 @@ describe('VoiceChat', () => {
   });
 
   describe('rendering', () => {
-    it('renders header with title', () => {
-      render(<VoiceChat />);
-      expect(screen.getByText('Talk with Mewtwo')).toBeInTheDocument();
-    });
-
-    it('renders Clear History button', () => {
-      render(<VoiceChat />);
-      expect(screen.getByText('Clear History')).toBeInTheDocument();
-    });
-
     it('renders Mewtwo character', () => {
       render(<VoiceChat />);
       expect(screen.getByTestId('mewtwo-character')).toBeInTheDocument();
+    });
+
+    it('renders mic button', () => {
+      render(<VoiceChat />);
+      expect(screen.getByTestId('mic-button')).toBeInTheDocument();
+    });
+
+    it('renders settings menu', () => {
+      render(<VoiceChat />);
+      expect(screen.getByTestId('settings-menu')).toBeInTheDocument();
     });
 
     it('renders story time button', () => {
@@ -96,26 +134,17 @@ describe('VoiceChat', () => {
       expect(screen.getByTestId('story-time-button')).toBeInTheDocument();
     });
 
-    it('renders connect button when disconnected', () => {
+    it('does not render chat peek when no messages', () => {
       render(<VoiceChat />);
-      const button = screen.getByRole('button', { name: /🎤/i });
-      expect(button).toBeInTheDocument();
+      expect(screen.queryByTestId('chat-peek')).not.toBeInTheDocument();
     });
 
-    it('shows placeholder text when no messages', () => {
-      render(<VoiceChat />);
-      expect(
-        screen.getByText(/Press the connect button to start talking with Mewtwo/i)
-      ).toBeInTheDocument();
-    });
-
-    it('renders chat messages when they exist', () => {
+    it('renders chat peek when messages exist', () => {
       mockUseGeminiLive.mockReturnValue({
         voiceState: 'idle',
         connectionState: 'disconnected',
         messages: [
           { id: '1', role: 'user', content: 'Hello Mewtwo', timestamp: 1 },
-          { id: '2', role: 'assistant', content: 'Greetings trainer', timestamp: 2 },
         ],
         error: null,
         isSupported: true,
@@ -127,239 +156,21 @@ describe('VoiceChat', () => {
       });
 
       render(<VoiceChat />);
-      const bubbles = screen.getAllByTestId('chat-bubble');
-      expect(bubbles).toHaveLength(2);
+      expect(screen.getByTestId('chat-peek')).toBeInTheDocument();
     });
-  });
 
-  describe('connection states', () => {
-    it('shows microphone emoji when disconnected', () => {
+    it('does not show header title or Clear History button', () => {
       render(<VoiceChat />);
-      expect(screen.getByText('🎤')).toBeInTheDocument();
+      expect(screen.queryByText('Talk with Mewtwo')).not.toBeInTheDocument();
+      expect(screen.queryByText('Clear History')).not.toBeInTheDocument();
     });
 
-    it('shows stop emoji when connected', () => {
-      mockUseGeminiLive.mockReturnValue({
-        voiceState: 'idle',
-        connectionState: 'connected',
-        messages: [],
-        error: null,
-        isSupported: true,
-        isStoryMode: false,
-        connect: mockConnect,
-        disconnect: mockDisconnect,
-        clearHistory: mockClearHistory,
-        switchStoryMode: mockSwitchStoryMode,
-      });
-
+    it('does not show placeholder text', () => {
       render(<VoiceChat />);
-      expect(screen.getByText('🛑')).toBeInTheDocument();
+      expect(screen.queryByText(/Press the connect button/i)).not.toBeInTheDocument();
     });
 
-    it('shows ... when connecting', () => {
-      mockUseGeminiLive.mockReturnValue({
-        voiceState: 'idle',
-        connectionState: 'connecting',
-        messages: [],
-        error: null,
-        isSupported: true,
-        isStoryMode: false,
-        connect: mockConnect,
-        disconnect: mockDisconnect,
-        clearHistory: mockClearHistory,
-        switchStoryMode: mockSwitchStoryMode,
-      });
-
-      render(<VoiceChat />);
-      expect(screen.getByText('...')).toBeInTheDocument();
-    });
-
-    it('shows ... when reconnecting', () => {
-      mockUseGeminiLive.mockReturnValue({
-        voiceState: 'idle',
-        connectionState: 'reconnecting',
-        messages: [],
-        error: null,
-        isSupported: true,
-        isStoryMode: false,
-        connect: mockConnect,
-        disconnect: mockDisconnect,
-        clearHistory: mockClearHistory,
-        switchStoryMode: mockSwitchStoryMode,
-      });
-
-      render(<VoiceChat />);
-      expect(screen.getByText('...')).toBeInTheDocument();
-    });
-
-    it('applies yellow pulse animation when reconnecting', () => {
-      mockUseGeminiLive.mockReturnValue({
-        voiceState: 'idle',
-        connectionState: 'reconnecting',
-        messages: [],
-        error: null,
-        isSupported: true,
-        isStoryMode: false,
-        connect: mockConnect,
-        disconnect: mockDisconnect,
-        clearHistory: mockClearHistory,
-        switchStoryMode: mockSwitchStoryMode,
-      });
-
-      render(<VoiceChat />);
-      const button = screen.getByRole('button', { name: /\.\.\./i });
-      expect(button).toHaveClass('bg-yellow-500');
-      expect(button).toHaveClass('animate-pulse');
-    });
-
-    it('applies yellow pulse animation when connecting', () => {
-      mockUseGeminiLive.mockReturnValue({
-        voiceState: 'idle',
-        connectionState: 'connecting',
-        messages: [],
-        error: null,
-        isSupported: true,
-        isStoryMode: false,
-        connect: mockConnect,
-        disconnect: mockDisconnect,
-        clearHistory: mockClearHistory,
-        switchStoryMode: mockSwitchStoryMode,
-      });
-
-      render(<VoiceChat />);
-      const button = screen.getByRole('button', { name: /\.\.\./i });
-      expect(button).toHaveClass('bg-yellow-500');
-      expect(button).toHaveClass('animate-pulse');
-    });
-
-    it('applies red background when connected', () => {
-      mockUseGeminiLive.mockReturnValue({
-        voiceState: 'idle',
-        connectionState: 'connected',
-        messages: [],
-        error: null,
-        isSupported: true,
-        isStoryMode: false,
-        connect: mockConnect,
-        disconnect: mockDisconnect,
-        clearHistory: mockClearHistory,
-        switchStoryMode: mockSwitchStoryMode,
-      });
-
-      render(<VoiceChat />);
-      const button = screen.getByRole('button', { name: /🛑/i });
-      expect(button).toHaveClass('bg-red-500');
-    });
-
-    it('applies blue background when disconnected', () => {
-      render(<VoiceChat />);
-      const button = screen.getByRole('button', { name: /🎤/i });
-      expect(button).toHaveClass('bg-blue-500');
-    });
-  });
-
-  describe('reconnecting UI state', () => {
-    it('shows yellow error banner when reconnecting', () => {
-      mockUseGeminiLive.mockReturnValue({
-        voiceState: 'idle',
-        connectionState: 'reconnecting',
-        messages: [],
-        error: 'Connection lost — reconnecting...',
-        isSupported: true,
-        isStoryMode: false,
-        connect: mockConnect,
-        disconnect: mockDisconnect,
-        clearHistory: mockClearHistory,
-        switchStoryMode: mockSwitchStoryMode,
-      });
-
-      render(<VoiceChat />);
-      const errorBanner = screen.getByText('Connection lost — reconnecting...');
-      expect(errorBanner).toHaveClass('text-yellow-700');
-      expect(errorBanner.parentElement).toHaveClass('bg-yellow-50');
-    });
-
-    it('shows red error banner when in error state', () => {
-      mockUseGeminiLive.mockReturnValue({
-        voiceState: 'idle',
-        connectionState: 'error',
-        messages: [],
-        error: 'Connection lost. Please try again.',
-        isSupported: true,
-        isStoryMode: false,
-        connect: mockConnect,
-        disconnect: mockDisconnect,
-        clearHistory: mockClearHistory,
-        switchStoryMode: mockSwitchStoryMode,
-      });
-
-      render(<VoiceChat />);
-      const errorBanner = screen.getByText('Connection lost. Please try again.');
-      expect(errorBanner).toHaveClass('text-red-600');
-      expect(errorBanner.parentElement).toHaveClass('bg-red-50');
-    });
-
-    it('does not show error banner when no error', () => {
-      mockUseGeminiLive.mockReturnValue({
-        voiceState: 'idle',
-        connectionState: 'connected',
-        messages: [],
-        error: null,
-        isSupported: true,
-        isStoryMode: false,
-        connect: mockConnect,
-        disconnect: mockDisconnect,
-        clearHistory: mockClearHistory,
-        switchStoryMode: mockSwitchStoryMode,
-      });
-
-      render(<VoiceChat />);
-      expect(screen.queryByText(/Connection lost/i)).not.toBeInTheDocument();
-    });
-
-    it('calls disconnect when clicking button during reconnecting', () => {
-      mockUseGeminiLive.mockReturnValue({
-        voiceState: 'idle',
-        connectionState: 'reconnecting',
-        messages: [],
-        error: 'Connection lost — reconnecting...',
-        isSupported: true,
-        isStoryMode: false,
-        connect: mockConnect,
-        disconnect: mockDisconnect,
-        clearHistory: mockClearHistory,
-        switchStoryMode: mockSwitchStoryMode,
-      });
-
-      render(<VoiceChat />);
-      const button = screen.getByRole('button', { name: /\.\.\./i });
-      fireEvent.click(button);
-
-      expect(mockDisconnect).toHaveBeenCalledTimes(1);
-      expect(mockConnect).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('voice state indicator', () => {
-    it('shows "Connected" when idle and connected', () => {
-      mockUseGeminiLive.mockReturnValue({
-        voiceState: 'idle',
-        connectionState: 'connected',
-        messages: [],
-        error: null,
-        isSupported: true,
-        isStoryMode: false,
-        connect: mockConnect,
-        disconnect: mockDisconnect,
-        clearHistory: mockClearHistory,
-        switchStoryMode: mockSwitchStoryMode,
-      });
-
-      render(<VoiceChat />);
-      expect(screen.getByText('Connected')).toBeInTheDocument();
-    });
-
-    it('shows "Listening..." when listening', () => {
+    it('does not show voice state text pills', () => {
       mockUseGeminiLive.mockReturnValue({
         voiceState: 'listening',
         connectionState: 'connected',
@@ -374,105 +185,27 @@ describe('VoiceChat', () => {
       });
 
       render(<VoiceChat />);
-      expect(screen.getByText('Listening...')).toBeInTheDocument();
-    });
-
-    it('shows "Mewtwo is speaking..." when speaking', () => {
-      mockUseGeminiLive.mockReturnValue({
-        voiceState: 'speaking',
-        connectionState: 'connected',
-        messages: [],
-        error: null,
-        isSupported: true,
-        isStoryMode: false,
-        connect: mockConnect,
-        disconnect: mockDisconnect,
-        clearHistory: mockClearHistory,
-        switchStoryMode: mockSwitchStoryMode,
-      });
-
-      render(<VoiceChat />);
-      expect(screen.getByText('Mewtwo is speaking...')).toBeInTheDocument();
-    });
-
-    it('does not show voice state indicator when disconnected', () => {
-      render(<VoiceChat />);
-      expect(screen.queryByText('Connected')).not.toBeInTheDocument();
       expect(screen.queryByText('Listening...')).not.toBeInTheDocument();
       expect(screen.queryByText('Mewtwo is speaking...')).not.toBeInTheDocument();
+      expect(screen.queryByText('Connected')).not.toBeInTheDocument();
     });
 
-    it('applies green styling when listening', () => {
-      mockUseGeminiLive.mockReturnValue({
-        voiceState: 'listening',
-        connectionState: 'connected',
-        messages: [],
-        error: null,
-        isSupported: true,
-        isStoryMode: false,
-        connect: mockConnect,
-        disconnect: mockDisconnect,
-        clearHistory: mockClearHistory,
-        switchStoryMode: mockSwitchStoryMode,
-      });
-
-      render(<VoiceChat />);
-      const indicator = screen.getByText('Listening...');
-      expect(indicator).toHaveClass('bg-green-100');
-      expect(indicator).toHaveClass('text-green-700');
-    });
-
-    it('applies purple styling when speaking', () => {
-      mockUseGeminiLive.mockReturnValue({
-        voiceState: 'speaking',
-        connectionState: 'connected',
-        messages: [],
-        error: null,
-        isSupported: true,
-        isStoryMode: false,
-        connect: mockConnect,
-        disconnect: mockDisconnect,
-        clearHistory: mockClearHistory,
-        switchStoryMode: mockSwitchStoryMode,
-      });
-
-      render(<VoiceChat />);
-      const indicator = screen.getByText('Mewtwo is speaking...');
-      expect(indicator).toHaveClass('bg-purple-100');
-      expect(indicator).toHaveClass('text-purple-700');
-    });
-
-    it('applies gray styling when idle', () => {
-      mockUseGeminiLive.mockReturnValue({
-        voiceState: 'idle',
-        connectionState: 'connected',
-        messages: [],
-        error: null,
-        isSupported: true,
-        isStoryMode: false,
-        connect: mockConnect,
-        disconnect: mockDisconnect,
-        clearHistory: mockClearHistory,
-        switchStoryMode: mockSwitchStoryMode,
-      });
-
-      render(<VoiceChat />);
-      const indicator = screen.getByText('Connected');
-      expect(indicator).toHaveClass('bg-gray-100');
-      expect(indicator).toHaveClass('text-gray-600');
+    it('uses dark background', () => {
+      const { container } = render(<VoiceChat />);
+      const root = container.firstChild as HTMLElement;
+      expect(root.className).toContain('from-mewtwo-bg-deep');
+      expect(root.className).toContain('to-mewtwo-bg-mid');
     });
   });
 
-  describe('user interactions', () => {
-    it('calls connect when clicking microphone button', () => {
+  describe('connection behavior', () => {
+    it('calls connect when clicking mic button while disconnected', () => {
       render(<VoiceChat />);
-      const button = screen.getByRole('button', { name: /🎤/i });
-      fireEvent.click(button);
-
+      fireEvent.click(screen.getByTestId('mic-button'));
       expect(mockConnect).toHaveBeenCalledTimes(1);
     });
 
-    it('calls disconnect when clicking stop button', () => {
+    it('calls disconnect when clicking mic button while connected', () => {
       mockUseGeminiLive.mockReturnValue({
         voiceState: 'idle',
         connectionState: 'connected',
@@ -487,53 +220,16 @@ describe('VoiceChat', () => {
       });
 
       render(<VoiceChat />);
-      const button = screen.getByRole('button', { name: /🛑/i });
-      fireEvent.click(button);
-
+      fireEvent.click(screen.getByTestId('mic-button'));
       expect(mockDisconnect).toHaveBeenCalledTimes(1);
     });
 
-    it('calls clearHistory when clicking Clear History button', () => {
-      render(<VoiceChat />);
-      const button = screen.getByText('Clear History');
-      fireEvent.click(button);
-
-      expect(mockClearHistory).toHaveBeenCalledTimes(1);
-    });
-
-    it('calls switchStoryMode when toggling story button', () => {
-      render(<VoiceChat />);
-      const button = screen.getByTestId('story-time-button');
-      fireEvent.click(button);
-
-      expect(mockSwitchStoryMode).toHaveBeenCalledTimes(1);
-    });
-
-    it('disables connect button when not supported', () => {
+    it('calls disconnect when clicking mic button while reconnecting', () => {
       mockUseGeminiLive.mockReturnValue({
         voiceState: 'idle',
-        connectionState: 'disconnected',
+        connectionState: 'reconnecting',
         messages: [],
-        error: null,
-        isSupported: false,
-        isStoryMode: false,
-        connect: mockConnect,
-        disconnect: mockDisconnect,
-        clearHistory: mockClearHistory,
-        switchStoryMode: mockSwitchStoryMode,
-      });
-
-      render(<VoiceChat />);
-      const button = screen.getByRole('button', { name: /🎤/i });
-      expect(button).toBeDisabled();
-    });
-
-    it('disables connect button when connecting', () => {
-      mockUseGeminiLive.mockReturnValue({
-        voiceState: 'idle',
-        connectionState: 'connecting',
-        messages: [],
-        error: null,
+        error: 'Connection lost — reconnecting...',
         isSupported: true,
         isStoryMode: false,
         connect: mockConnect,
@@ -543,11 +239,11 @@ describe('VoiceChat', () => {
       });
 
       render(<VoiceChat />);
-      const button = screen.getByRole('button', { name: /\.\.\./i });
-      expect(button).toBeDisabled();
+      fireEvent.click(screen.getByTestId('mic-button'));
+      expect(mockDisconnect).toHaveBeenCalledTimes(1);
     });
 
-    it('shows browser support warning when not supported', () => {
+    it('disables mic button when not supported', () => {
       mockUseGeminiLive.mockReturnValue({
         voiceState: 'idle',
         connectionState: 'disconnected',
@@ -562,9 +258,7 @@ describe('VoiceChat', () => {
       });
 
       render(<VoiceChat />);
-      expect(
-        screen.getByText(/Microphone is not supported in your browser/i)
-      ).toBeInTheDocument();
+      expect(screen.getByTestId('mic-button')).toBeDisabled();
     });
   });
 
@@ -575,7 +269,7 @@ describe('VoiceChat', () => {
       expect(character).toHaveAttribute('data-state', 'idle');
     });
 
-    it('passes listening state to Mewtwo character', () => {
+    it('passes connectionState to Mewtwo character', () => {
       mockUseGeminiLive.mockReturnValue({
         voiceState: 'listening',
         connectionState: 'connected',
@@ -592,6 +286,7 @@ describe('VoiceChat', () => {
       render(<VoiceChat />);
       const character = screen.getByTestId('mewtwo-character');
       expect(character).toHaveAttribute('data-state', 'listening');
+      expect(character).toHaveAttribute('data-connection', 'connected');
     });
 
     it('passes speaking state to Mewtwo character', () => {
@@ -614,8 +309,44 @@ describe('VoiceChat', () => {
     });
   });
 
-  describe('message placeholder text', () => {
-    it('shows connected placeholder when connected', () => {
+  describe('error display', () => {
+    it('shows error banner when reconnecting', () => {
+      mockUseGeminiLive.mockReturnValue({
+        voiceState: 'idle',
+        connectionState: 'reconnecting',
+        messages: [],
+        error: 'Connection lost — reconnecting...',
+        isSupported: true,
+        isStoryMode: false,
+        connect: mockConnect,
+        disconnect: mockDisconnect,
+        clearHistory: mockClearHistory,
+        switchStoryMode: mockSwitchStoryMode,
+      });
+
+      render(<VoiceChat />);
+      expect(screen.getByText('Connection lost — reconnecting...')).toBeInTheDocument();
+    });
+
+    it('shows error banner in error state', () => {
+      mockUseGeminiLive.mockReturnValue({
+        voiceState: 'idle',
+        connectionState: 'error',
+        messages: [],
+        error: 'Connection lost. Please try again.',
+        isSupported: true,
+        isStoryMode: false,
+        connect: mockConnect,
+        disconnect: mockDisconnect,
+        clearHistory: mockClearHistory,
+        switchStoryMode: mockSwitchStoryMode,
+      });
+
+      render(<VoiceChat />);
+      expect(screen.getByText('Connection lost. Please try again.')).toBeInTheDocument();
+    });
+
+    it('does not show error banner when no error', () => {
       mockUseGeminiLive.mockReturnValue({
         voiceState: 'idle',
         connectionState: 'connected',
@@ -630,30 +361,23 @@ describe('VoiceChat', () => {
       });
 
       render(<VoiceChat />);
-      expect(
-        screen.getByText('Start talking! Mewtwo is listening...')
-      ).toBeInTheDocument();
-    });
-
-    it('shows disconnected placeholder when disconnected', () => {
-      render(<VoiceChat />);
-      expect(
-        screen.getByText(/Press the connect button to start talking with Mewtwo/i)
-      ).toBeInTheDocument();
+      expect(screen.queryByText(/Connection lost/i)).not.toBeInTheDocument();
     });
   });
 
-  describe('auto-scroll behavior', () => {
-    it('calls scrollIntoView when messages change', async () => {
-      const scrollIntoViewMock = jest.fn();
+  describe('chat drawer', () => {
+    it('does not show chat drawer by default', () => {
+      render(<VoiceChat />);
+      expect(screen.queryByTestId('chat-drawer')).not.toBeInTheDocument();
+    });
 
-      const { rerender } = render(<VoiceChat />);
-
-      // Add messages
+    it('opens chat drawer when clicking chat peek', () => {
       mockUseGeminiLive.mockReturnValue({
         voiceState: 'idle',
-        connectionState: 'connected',
-        messages: [{ id: '1', role: 'user', content: 'Hello', timestamp: 1 }],
+        connectionState: 'disconnected',
+        messages: [
+          { id: '1', role: 'assistant', content: 'Hello trainer', timestamp: 1 },
+        ],
         error: null,
         isSupported: true,
         isStoryMode: false,
@@ -663,14 +387,69 @@ describe('VoiceChat', () => {
         switchStoryMode: mockSwitchStoryMode,
       });
 
-      // Replace the mock with our spy
-      Element.prototype.scrollIntoView = scrollIntoViewMock;
+      render(<VoiceChat />);
+      fireEvent.click(screen.getByTestId('chat-peek'));
+      expect(screen.getByTestId('chat-drawer')).toBeInTheDocument();
+    });
 
-      rerender(<VoiceChat />);
-
-      await waitFor(() => {
-        expect(scrollIntoViewMock).toHaveBeenCalled();
+    it('closes chat drawer when clicking close', () => {
+      mockUseGeminiLive.mockReturnValue({
+        voiceState: 'idle',
+        connectionState: 'disconnected',
+        messages: [
+          { id: '1', role: 'assistant', content: 'Hello trainer', timestamp: 1 },
+        ],
+        error: null,
+        isSupported: true,
+        isStoryMode: false,
+        connect: mockConnect,
+        disconnect: mockDisconnect,
+        clearHistory: mockClearHistory,
+        switchStoryMode: mockSwitchStoryMode,
       });
+
+      render(<VoiceChat />);
+      fireEvent.click(screen.getByTestId('chat-peek'));
+      expect(screen.getByTestId('chat-drawer')).toBeInTheDocument();
+
+      fireEvent.click(screen.getByTestId('drawer-close'));
+      expect(screen.queryByTestId('chat-drawer')).not.toBeInTheDocument();
+    });
+
+    it('calls clearHistory from drawer', () => {
+      mockUseGeminiLive.mockReturnValue({
+        voiceState: 'idle',
+        connectionState: 'disconnected',
+        messages: [
+          { id: '1', role: 'assistant', content: 'Hello trainer', timestamp: 1 },
+        ],
+        error: null,
+        isSupported: true,
+        isStoryMode: false,
+        connect: mockConnect,
+        disconnect: mockDisconnect,
+        clearHistory: mockClearHistory,
+        switchStoryMode: mockSwitchStoryMode,
+      });
+
+      render(<VoiceChat />);
+      fireEvent.click(screen.getByTestId('chat-peek'));
+      fireEvent.click(screen.getByTestId('drawer-clear'));
+      expect(mockClearHistory).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('settings and story mode', () => {
+    it('calls clearHistory from settings menu', () => {
+      render(<VoiceChat />);
+      fireEvent.click(screen.getByTestId('settings-menu'));
+      expect(mockClearHistory).toHaveBeenCalledTimes(1);
+    });
+
+    it('calls switchStoryMode when toggling story button', () => {
+      render(<VoiceChat />);
+      fireEvent.click(screen.getByTestId('story-time-button'));
+      expect(mockSwitchStoryMode).toHaveBeenCalledTimes(1);
     });
   });
 });
