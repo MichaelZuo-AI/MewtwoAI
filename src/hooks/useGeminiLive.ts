@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { GoogleGenAI, Modality, Session } from '@google/genai';
+import { GoogleGenAI, Modality, Session, ActivityHandling } from '@google/genai';
 import type { LiveServerMessage } from '@google/genai';
 import { useAudioCapture } from './useAudioCapture';
 import { useAudioPlayback } from './useAudioPlayback';
@@ -234,6 +234,7 @@ export function useGeminiLive() {
           },
           systemInstruction: getSystemPrompt(isStoryModeRef.current),
           realtimeInputConfig: {
+            activityHandling: isStoryModeRef.current ? ActivityHandling.NO_INTERRUPTION : ActivityHandling.START_OF_ACTIVITY_INTERRUPTS,
             automaticActivityDetection: {
               silenceDurationMs: isStoryModeRef.current ? 5000 : 2000,
             },
