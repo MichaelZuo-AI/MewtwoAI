@@ -2,6 +2,11 @@
 
 All notable changes to MewtwoAI will be documented in this file.
 
+## [0.3.1] - 2026-02-08
+
+### Added
+- **Screen Wake Lock** -- keeps iPad/phone screen on during voice chat so the connection stays alive; automatically re-acquires lock after screen unlock
+
 ## [0.3.0] - 2026-02-08
 
 ### Added

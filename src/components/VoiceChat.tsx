@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { useGeminiLive } from '@/hooks/useGeminiLive';
+import { useWakeLock } from '@/hooks/useWakeLock';
 import MewtwoCharacter from './MewtwoCharacter';
 import ChatBubble from './ChatBubble';
 import StoryTimeButton from './StoryTimeButton';
@@ -20,16 +21,27 @@ export default function VoiceChat() {
     switchStoryMode,
   } = useGeminiLive();
 
+  const { request: requestWakeLock, release: releaseWakeLock } = useWakeLock();
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const isConnected = connectionState === 'connected';
+  const isConnecting = connectionState === 'connecting';
+  const isReconnecting = connectionState === 'reconnecting';
 
   // Auto-scroll to latest message
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const isConnected = connectionState === 'connected';
-  const isConnecting = connectionState === 'connecting';
-  const isReconnecting = connectionState === 'reconnecting';
+  // Keep screen awake while connected
+  useEffect(() => {
+    if (isConnected || isReconnecting) {
+      requestWakeLock();
+    } else {
+      releaseWakeLock();
+    }
+  }, [isConnected, isReconnecting, requestWakeLock, releaseWakeLock]);
 
   const handleToggleConnection = () => {
     if (isConnected || isReconnecting) {
