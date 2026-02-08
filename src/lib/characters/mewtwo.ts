@@ -122,8 +122,8 @@ export const mewtwo: CharacterConfig = {
   image: {
     idle: '/mewtwo/mewtwo.png',
     listening: '/mewtwo/mewtwo.png',
-    speaking: '/mewtwo/mega-mewtwo-y.png',
-    processing: '/mewtwo/mewtwo-attack.png',
+    speaking: '/mewtwo/mega-mewtwo-y.svg',
+    processing: '/mewtwo/mewtwo-attack.svg',
   },
   voice: 'Fenrir',
   theme: {

@@ -183,8 +183,8 @@ describe('resolveImage', () => {
   const stateImages: CharacterStateImages = {
     idle: '/mewtwo/mewtwo.png',
     listening: '/mewtwo/mewtwo.png',
-    speaking: '/mewtwo/mega-mewtwo-y.png',
-    processing: '/mewtwo/mewtwo-attack.png',
+    speaking: '/mewtwo/mega-mewtwo-y.svg',
+    processing: '/mewtwo/mewtwo-attack.svg',
   };
 
   it('returns the string directly for string images', () => {
@@ -201,11 +201,11 @@ describe('resolveImage', () => {
   });
 
   it('returns speaking image for speaking state', () => {
-    expect(resolveImage(stateImages, 'speaking')).toBe('/mewtwo/mega-mewtwo-y.png');
+    expect(resolveImage(stateImages, 'speaking')).toBe('/mewtwo/mega-mewtwo-y.svg');
   });
 
   it('returns processing image for processing state', () => {
-    expect(resolveImage(stateImages, 'processing')).toBe('/mewtwo/mewtwo-attack.png');
+    expect(resolveImage(stateImages, 'processing')).toBe('/mewtwo/mewtwo-attack.svg');
   });
 
   it('falls back to idle when state image is not defined', () => {

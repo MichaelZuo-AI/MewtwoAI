@@ -136,8 +136,8 @@ describe('mewtwo config', () => {
     expect(typeof mewtwo.image).toBe('object');
     const img = mewtwo.image as { idle: string; speaking?: string; processing?: string };
     expect(img.idle).toBe('/mewtwo/mewtwo.png');
-    expect(img.speaking).toBe('/mewtwo/mega-mewtwo-y.png');
-    expect(img.processing).toBe('/mewtwo/mewtwo-attack.png');
+    expect(img.speaking).toBe('/mewtwo/mega-mewtwo-y.svg');
+    expect(img.processing).toBe('/mewtwo/mewtwo-attack.svg');
   });
 
   it('uses Fenrir voice', () => {
