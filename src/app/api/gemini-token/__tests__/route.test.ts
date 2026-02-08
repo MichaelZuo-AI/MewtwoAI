@@ -11,6 +11,7 @@ jest.mock('@google/genai', () => ({
   GoogleGenAI: jest.fn().mockImplementation(() => ({
     authTokens: { create: mockCreate },
   })),
+  Modality: { AUDIO: 'AUDIO' },
 }));
 
 function makeRequest(body: Record<string, unknown> = {}): Request {

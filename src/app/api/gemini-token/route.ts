@@ -1,4 +1,4 @@
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenAI, Modality } from '@google/genai';
 import { NextResponse } from 'next/server';
 import { getSystemPrompt } from '@/lib/mewtwo-prompts';
 
@@ -24,7 +24,7 @@ export async function POST(request: Request) {
         liveConnectConstraints: {
           model: 'gemini-2.5-flash-native-audio-preview-12-2025',
           config: {
-            responseModalities: ['AUDIO'],
+            responseModalities: [Modality.AUDIO],
             systemInstruction: getSystemPrompt(isStoryMode),
           },
         },

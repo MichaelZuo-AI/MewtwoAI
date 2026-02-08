@@ -163,6 +163,7 @@ describe('storage', () => {
     })
 
     it('should update conversation updatedAt timestamp', () => {
+      jest.useFakeTimers()
       const conversation = storage.createConversation()
       const originalUpdatedAt = conversation.updatedAt
 
@@ -177,6 +178,7 @@ describe('storage', () => {
 
       const updated = storage.getCurrentConversation()
       expect(updated!.updatedAt).toBeGreaterThanOrEqual(originalUpdatedAt)
+      jest.useRealTimers()
     })
 
     it('should persist message to storage', () => {
