@@ -127,7 +127,7 @@ export function useGeminiLive(character: CharacterConfig) {
     setConnectionState(isReconnect ? 'reconnecting' : 'connecting');
 
     try {
-      // Compute bedtime in Korean time (KST, UTC+9) — 8:30 PM+
+      // Compute bedtime in Korean time (KST, UTC+9) — 8:30 PM to 7:30 AM
       const kstParts = new Intl.DateTimeFormat('en-US', {
         timeZone: 'Asia/Seoul',
         hour: 'numeric',
@@ -136,7 +136,7 @@ export function useGeminiLive(character: CharacterConfig) {
       }).formatToParts(new Date());
       const hour = parseInt(kstParts.find(p => p.type === 'hour')!.value, 10);
       const minutes = parseInt(kstParts.find(p => p.type === 'minute')!.value, 10);
-      const isBedtime = hour > 20 || (hour === 20 && minutes >= 30);
+      const isBedtime = hour > 20 || (hour === 20 && minutes >= 30) || hour < 7 || (hour === 7 && minutes < 30);
       const kstTimeString = `${hour}:${String(minutes).padStart(2, '0')}`;
 
       // 1. Get ephemeral token from our server
