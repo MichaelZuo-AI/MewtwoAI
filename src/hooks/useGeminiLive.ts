@@ -127,10 +127,11 @@ export function useGeminiLive(character: CharacterConfig) {
     setConnectionState(isReconnect ? 'reconnecting' : 'connecting');
 
     try {
-      // Compute bedtime based on device local time (8:30 PM+)
-      const now = new Date();
-      const hour = now.getHours();
-      const minutes = now.getMinutes();
+      // Compute bedtime in Korean time (KST, UTC+9) — 8:30 PM+
+      const kstString = new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' });
+      const kstDate = new Date(kstString);
+      const hour = kstDate.getHours();
+      const minutes = kstDate.getMinutes();
       const isBedtime = hour > 20 || (hour === 20 && minutes >= 30);
 
       // 1. Get ephemeral token from our server

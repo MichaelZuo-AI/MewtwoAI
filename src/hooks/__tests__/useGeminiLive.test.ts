@@ -896,7 +896,11 @@ describe('useGeminiLive', () => {
     });
   });
 
-  describe('bedtime detection', () => {
+  describe('bedtime detection (KST)', () => {
+    // Bedtime is computed in Asia/Seoul (KST = UTC+9)
+    // To set KST time, we set UTC time minus 9 hours
+    // e.g. KST 21:00 = UTC 12:00
+
     beforeEach(() => {
       jest.useFakeTimers();
     });
@@ -905,8 +909,8 @@ describe('useGeminiLive', () => {
       jest.useRealTimers();
     });
 
-    it('sends isBedtime=true when time is after 8:30 PM', async () => {
-      jest.setSystemTime(new Date(2025, 0, 1, 21, 0, 0)); // 9:00 PM
+    it('sends isBedtime=true when KST is after 8:30 PM', async () => {
+      jest.setSystemTime(new Date('2025-01-01T12:00:00Z')); // KST 21:00
 
       const { result } = renderHook(() => useGeminiLive(mewtwo));
 
@@ -918,8 +922,8 @@ describe('useGeminiLive', () => {
       expect(body.isBedtime).toBe(true);
     });
 
-    it('sends isBedtime=true when time is exactly 8:30 PM', async () => {
-      jest.setSystemTime(new Date(2025, 0, 1, 20, 30, 0)); // 8:30 PM
+    it('sends isBedtime=true when KST is exactly 8:30 PM', async () => {
+      jest.setSystemTime(new Date('2025-01-01T11:30:00Z')); // KST 20:30
 
       const { result } = renderHook(() => useGeminiLive(mewtwo));
 
@@ -931,8 +935,8 @@ describe('useGeminiLive', () => {
       expect(body.isBedtime).toBe(true);
     });
 
-    it('sends isBedtime=false when time is before 8:30 PM', async () => {
-      jest.setSystemTime(new Date(2025, 0, 1, 14, 0, 0)); // 2:00 PM
+    it('sends isBedtime=false when KST is before 8:30 PM', async () => {
+      jest.setSystemTime(new Date('2025-01-01T05:00:00Z')); // KST 14:00
 
       const { result } = renderHook(() => useGeminiLive(mewtwo));
 
@@ -944,8 +948,8 @@ describe('useGeminiLive', () => {
       expect(body.isBedtime).toBe(false);
     });
 
-    it('sends isBedtime=false at 8:29 PM', async () => {
-      jest.setSystemTime(new Date(2025, 0, 1, 20, 29, 0)); // 8:29 PM
+    it('sends isBedtime=false at KST 8:29 PM', async () => {
+      jest.setSystemTime(new Date('2025-01-01T11:29:00Z')); // KST 20:29
 
       const { result } = renderHook(() => useGeminiLive(mewtwo));
 
@@ -958,7 +962,7 @@ describe('useGeminiLive', () => {
     });
 
     it('passes isBedtime to systemInstruction via getSystemPrompt', async () => {
-      jest.setSystemTime(new Date(2025, 0, 1, 21, 0, 0)); // 9:00 PM
+      jest.setSystemTime(new Date('2025-01-01T12:00:00Z')); // KST 21:00
 
       const { result } = renderHook(() => useGeminiLive(mewtwo));
 
@@ -970,8 +974,8 @@ describe('useGeminiLive', () => {
       expect(config.systemInstruction).toContain('BEDTIME MODE');
     });
 
-    it('does not include bedtime in systemInstruction during daytime', async () => {
-      jest.setSystemTime(new Date(2025, 0, 1, 10, 0, 0)); // 10:00 AM
+    it('does not include bedtime in systemInstruction during KST daytime', async () => {
+      jest.setSystemTime(new Date('2025-01-01T01:00:00Z')); // KST 10:00
 
       const { result } = renderHook(() => useGeminiLive(mewtwo));
 
