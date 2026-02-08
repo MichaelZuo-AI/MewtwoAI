@@ -2,6 +2,62 @@
 
 All notable changes to MewtwoAI will be documented in this file.
 
+## [0.5.0] - 2026-02-08
+
+### Added
+- **Bedtime mode (8:30 PM KST)** -- all 4 characters gently encourage Damian to go to sleep after bedtime
+- Bedtime detection uses `Intl.DateTimeFormat.formatToParts()` with `Asia/Seoul` timezone for reliable KST time
+- Each character has in-character bedtime addendum with the actual Korean time embedded in the prompt
+- Explicit "do NOT use any other time source" instruction overrides Gemini's internal UTC clock
+- `isBedtime` and `kstTimeString` passed through token API to system prompt
+
+### Added (infrastructure)
+- `CharacterStateImages` type for per-state character artwork (idle, listening, speaking, processing)
+- `resolveImage()` helper exported from CharacterDisplay for image resolution
+- Image crossfade (150ms opacity transition) and preloading support in CharacterDisplay
+- Currently unused (all characters use single image string) — ready for when proper artwork is available
+
+### Fixed
+- Bedtime prompt no longer uses `new Date(toLocaleString())` which re-parses in device local timezone
+- Gemini no longer contradicts bedtime by saying "it's morning" — actual KST time is embedded in prompt
+
+### Changed
+- `CharacterConfig.getSystemPrompt` signature: `(isStoryMode, isBedtime?, kstTimeString?)`
+- `CharacterConfig.image` type: `string | CharacterStateImages`
+- Token API accepts `isBedtime` and `kstTimeString` in request body
+- `CharacterSelect` uses `resolveImage()` for image source
+
+## [0.4.0] - 2026-02-08
+
+### Added
+- **4 playable characters**: Mewtwo, Kirby, Dragonite, Magolor — each with unique voice, personality, theme, and prompts
+- **Swipe-to-switch characters** -- horizontal swipe with direction locking, drag resistance, 80px threshold, circular navigation
+- **Character selection screen** -- grid of tappable portraits with accent color glow
+- **Character dot indicators** -- shows active character during voice chat
+- **English learning focus** -- all 4 characters have "HELPING DAMIAN WITH ENGLISH" prompt sections with techniques: simple words, gentle correction, one new word at a time, two-choice questions, celebrate effort
+- **Per-character themes** -- background colors, aura colors, ring colors, mic gradients unique to each character
+- **Per-character voices** -- Mewtwo (Fenrir), Kirby (Puck), Dragonite (Aoede), Magolor (Kore)
+- **Per-character story mode** -- each character tells bedtime stories in their own voice and world
+- **Slide-in animations** -- CSS slide transitions when switching characters
+- `useSwipeGesture` hook for touch gesture detection
+- `CharacterDots` component for active character indicator
+- `CharacterDisplay` component with animated aura effects per voice state
+- Server-side characterId validation in token API (rejects unknown IDs with 400)
+- Official artwork for all 4 characters (replaced SVG placeholders)
+- 431 unit tests across 13 suites (up from 283 across 10)
+
+### Changed
+- Architecture refactored from single-character to multi-character system
+- Character configs are self-contained files in `src/lib/characters/`
+- `useGeminiLive` accepts `CharacterConfig` parameter instead of hardcoded Mewtwo
+- Token API reads `characterId` from request body
+- VoiceChat unmounts/remounts on character switch for clean WebSocket teardown
+- Selection persisted in localStorage
+
+### Removed
+- Old `src/lib/mewtwo-prompts.ts` (prompts now live in character config files)
+- Unused SVG placeholder files for Kirby, Dragonite, Magolor
+
 ## [0.3.1] - 2026-02-08
 
 ### Added
