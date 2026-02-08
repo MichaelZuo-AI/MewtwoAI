@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**MewtwoAI** - An interactive voice chat web application where kids can talk with Mewtwo, the legendary Pokémon character. Built with Next.js 14, React, TypeScript, OpenAI GPT-4, and ElevenLabs TTS.
+**MewtwoAI** - An interactive voice chat web application where kids can talk with Mewtwo, the legendary Pokémon character. Built with Next.js 14, React, TypeScript, Google Gemini 1.5 Flash, and ElevenLabs TTS.
 
 ### Key Features
 - Voice-based conversations using Web Speech API
@@ -42,7 +42,7 @@ npm run lint
 ```
 
 ### Environment Variables Required
-- `OPENAI_API_KEY`: OpenAI API key for GPT-4
+- `GEMINI_API_KEY`: Google Gemini API key (free at https://aistudio.google.com/app/apikey)
 - `ELEVENLABS_API_KEY`: ElevenLabs API key for TTS (optional, will fallback to browser TTS)
 - `NEXT_PUBLIC_APP_URL`: App URL (default: http://localhost:3000)
 
@@ -51,7 +51,7 @@ npm run lint
 ### Tech Stack
 - **Frontend**: Next.js 14 App Router, React 18, TypeScript
 - **Styling**: Tailwind CSS with custom Mewtwo theme
-- **AI**: OpenAI GPT-4 Turbo with streaming responses
+- **AI**: Google Gemini 1.5 Flash with streaming responses
 - **Voice Input**: Web Speech API (browser native)
 - **Voice Output**: ElevenLabs Text-to-Speech API
 - **Storage**: LocalStorage for offline-first experience
@@ -77,7 +77,7 @@ src/
 │   ├── useTextToSpeech.ts      # TTS with queue management
 │   └── useConversation.ts      # Chat state & API calls
 ├── lib/                   # Utility libraries
-│   ├── openai.ts          # OpenAI client configuration
+│   ├── gemini.ts          # Gemini client configuration
 │   ├── mewtwo-prompts.ts  # AI personality system prompts
 │   └── storage.ts         # LocalStorage utilities
 └── types/                 # TypeScript type definitions
@@ -87,7 +87,7 @@ src/
 ### Key Design Decisions
 
 1. **Web Speech API for Input**: Browser-native, free, works well on Chrome/Safari
-2. **Streaming Responses**: OpenAI responses stream for faster perceived performance
+2. **Streaming Responses**: Gemini responses stream for faster perceived performance
 3. **LocalStorage First**: Offline-first with conversation persistence
 4. **Mobile-First UI**: Large touch targets, responsive design, PWA capabilities
 5. **Safety Built-In**: Age-appropriate content filtering in system prompts
@@ -132,6 +132,6 @@ Mewtwo's personality is defined in `src/lib/mewtwo-prompts.ts`:
 - Parental controls dashboard
 
 ### Cost Considerations
-- OpenAI: ~$0.01-0.03 per conversation
-- ElevenLabs: ~$0.18-0.30 per 1k chars (10k free/month)
+- Gemini API: Free tier (15 requests/min, 1M tokens/day)
+- ElevenLabs: ~$0.18-0.30 per 1k chars (10k free/month), or $0 with browser TTS fallback
 - Vercel: Free for personal use

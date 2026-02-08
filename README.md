@@ -1,201 +1,176 @@
-# Mewtwo AI - Voice Chat Application
+# MewtwoAI
 
-An interactive voice chat web application where kids can talk with Mewtwo, the legendary Pokémon character. Built with Next.js, OpenAI GPT-4, and ElevenLabs Text-to-Speech.
+A kid-friendly voice chat application that lets children have real-time conversations with Mewtwo, the legendary psychic Pokemon. Designed for ages 5 and up.
 
-## Features
+## Quick Start (3 Minutes)
 
-- 🎤 **Voice Input**: Natural speech recognition using Web Speech API
-- 🔊 **Voice Output**: High-quality text-to-speech with deep, powerful voice
-- 💬 **Interactive Chat**: Context-aware conversations with kid-friendly Mewtwo personality
-- 📖 **Story Time Mode**: Generate Pokémon stories for bedtime or entertainment
-- 💾 **Conversation History**: Persistent chat history across sessions
-- 📱 **Mobile-First**: Optimized for tablets and phones with PWA support
-- 🎨 **Animated Character**: Visual feedback for different states (idle, listening, speaking)
-
-## Tech Stack
-
-- **Frontend**: Next.js 14 with React and TypeScript
-- **Styling**: Tailwind CSS
-- **AI**: OpenAI GPT-4 Turbo
-- **Voice Input**: Web Speech API (browser native)
-- **Voice Output**: ElevenLabs Text-to-Speech API
-- **Storage**: LocalStorage for offline-first experience
-- **Hosting**: Vercel (recommended)
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js 18+ and npm
-- OpenAI API key
-- ElevenLabs API key (optional, will fallback to browser TTS)
-
-### Installation
-
-1. Clone the repository:
 ```bash
-git clone <repository-url>
+# 1. Clone and install
+git clone https://github.com/AIDreamWorks/MewtwoAI.git
 cd MewtwoAI
-```
-
-2. Install dependencies:
-```bash
 npm install
-```
 
-3. Create a `.env.local` file in the root directory:
-```env
-OPENAI_API_KEY=sk-...
-ELEVENLABS_API_KEY=...
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-```
+# 2. Add your API key
+cp .env.example .env.local
+# Edit .env.local and add your GEMINI_API_KEY
+# Get a free key at https://aistudio.google.com/app/apikey
 
-4. Run the development server:
-```bash
+# 3. Start the app
 npm run dev
 ```
 
-5. Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open **http://localhost:3000** in Chrome or Safari, tap the microphone button, and start talking to Mewtwo.
 
-### Building for Production
+## Features
 
-```bash
-npm run build
-npm start
+- **Voice Conversations** -- Push-to-talk and auto-listen modes using the Web Speech API
+- **AI-Powered Responses** -- Google Gemini 1.5 Flash generates age-appropriate, in-character replies
+- **Text-to-Speech** -- ElevenLabs integration with automatic browser TTS fallback
+- **Story Time Mode** -- Mewtwo tells original Pokemon bedtime stories
+- **Conversation History** -- Chat sessions persist in localStorage across page reloads
+- **Mobile-First Design** -- Large touch targets, responsive layout, installable as a PWA
+
+## Requirements
+
+| Requirement | Details |
+|------------|---------|
+| Node.js | v18 or higher |
+| GEMINI_API_KEY | Required. Free at [aistudio.google.com](https://aistudio.google.com/app/apikey) |
+| ELEVENLABS_API_KEY | Optional. Falls back to browser speech synthesis if not set |
+| Browser | Chrome, Edge, or Safari recommended |
+
+## Environment Variables
+
+Create a `.env.local` file in the project root:
+
+```env
+GEMINI_API_KEY=your_gemini_api_key_here
+ELEVENLABS_API_KEY=your_elevenlabs_key_here    # optional
+NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
-## Usage
+## How to Play
 
-1. **Start a Conversation**:
-   - Press the microphone button (🎤) to start speaking
-   - Speak your message to Mewtwo
-   - Release or press again to stop recording
-   - Mewtwo will respond with voice and text
+1. **Talk to Mewtwo** -- Press the microphone button and speak. Mewtwo will listen, think, and respond with voice and text.
+2. **Auto Mode** -- Toggle auto mode for hands-free back-and-forth conversation. Mewtwo listens again automatically after each response.
+3. **Story Time** -- Tap the Story Time button in the top-right corner. Ask Mewtwo to tell a story and it will generate a kid-friendly Pokemon adventure.
+4. **Stop** -- Press the Stop button at any time to interrupt speech and listening.
 
-2. **Auto Mode**:
-   - Toggle "Auto Mode" for continuous conversation
-   - Mewtwo will automatically listen after speaking
+## Commands
 
-3. **Story Time**:
-   - Click the "Story Time" button in the top-right
-   - Ask Mewtwo to tell you a story
-   - Stories are generated specifically for kids
+```bash
+npm run dev            # Start development server on port 3000
+npm run build          # Build for production
+npm start              # Start production server
+npm test               # Run all 258 unit tests
+npm run test:coverage  # Run tests with coverage report
+npm run lint           # Run ESLint
+```
 
-4. **Stop All**:
-   - Press the "Stop" button to interrupt speech and listening
+## Tech Stack
 
-## Browser Compatibility
-
-- **Chrome/Edge**: Full support (best experience)
-- **Safari (iOS/macOS)**: Full support with webkit prefix
-- **Firefox**: Limited speech recognition support
-- **Android Chrome**: Full support
+| Layer | Technology |
+|-------|-----------|
+| Framework | Next.js 14 (App Router) |
+| Language | TypeScript, React 18 |
+| AI | Google Gemini 1.5 Flash |
+| Voice Input | Web Speech API (browser native) |
+| Voice Output | ElevenLabs API / browser speechSynthesis |
+| Styling | Tailwind CSS |
+| Storage | localStorage (offline-first) |
+| Testing | Jest 30, React Testing Library |
 
 ## Project Structure
 
 ```
-MewtwoAI/
-├── src/
-│   ├── app/                    # Next.js app directory
-│   │   ├── api/               # API routes (chat, tts)
-│   │   ├── page.tsx           # Main page
-│   │   ├── layout.tsx         # Root layout
-│   │   └── globals.css        # Global styles
-│   ├── components/            # React components
-│   │   ├── VoiceChat.tsx      # Main chat interface
-│   │   ├── MewtwoCharacter.tsx # Animated character
-│   │   ├── ChatBubble.tsx     # Message display
-│   │   └── StoryTimeButton.tsx # Story mode toggle
-│   ├── hooks/                 # Custom React hooks
-│   │   ├── useSpeechRecognition.ts
-│   │   ├── useTextToSpeech.ts
-│   │   └── useConversation.ts
-│   ├── lib/                   # Utility libraries
-│   │   ├── openai.ts          # OpenAI client
-│   │   ├── mewtwo-prompts.ts  # AI personality prompts
-│   │   └── storage.ts         # LocalStorage utilities
-│   └── types/                 # TypeScript types
-│       └── chat.ts
-├── public/                    # Static assets
-│   ├── manifest.json          # PWA manifest
-│   └── icons/                 # App icons
-└── ...config files
+src/
+  app/
+    api/
+      chat/route.ts           # Gemini streaming chat endpoint
+      tts/route.ts             # ElevenLabs TTS endpoint (501 fallback)
+    page.tsx                   # Main page
+    layout.tsx                 # Root layout with PWA config
+  components/
+    VoiceChat.tsx              # Main voice chat interface
+    MewtwoCharacter.tsx        # Animated character with state indicators
+    ChatBubble.tsx             # User/assistant message bubbles
+    StoryTimeButton.tsx        # Story mode toggle
+  hooks/
+    useConversation.ts         # Chat state management, SSE stream parsing
+    useSpeechRecognition.ts    # Web Speech API wrapper (ref-based callbacks)
+    useTextToSpeech.ts         # TTS with audio queue and browser fallback
+  lib/
+    gemini.ts                  # Gemini client (lazy singleton, key validation)
+    mewtwo-prompts.ts          # System prompts for Mewtwo personality
+    storage.ts                 # localStorage CRUD (UUID-based IDs)
+  types/
+    chat.ts                    # Message, Conversation, VoiceState types
 ```
+
+## Browser Compatibility
+
+| Browser | Support |
+|---------|---------|
+| Chrome / Edge | Full support (recommended) |
+| Safari (iOS / macOS) | Full support |
+| Android Chrome | Full support |
+| Firefox | Limited -- speech recognition not fully supported |
+
+## Deploy to Vercel
+
+```bash
+# Install Vercel CLI
+npm i -g vercel
+
+# Deploy
+vercel
+```
+
+Add `GEMINI_API_KEY` and optionally `ELEVENLABS_API_KEY` in the Vercel dashboard under Settings > Environment Variables.
+
+### Install as PWA
+
+Once deployed, users can install the app to their home screen:
+
+- **iOS**: Safari > Share > Add to Home Screen
+- **Android**: Chrome > Menu > Install App
+
+## Cost
+
+| Service | Cost |
+|---------|------|
+| Google Gemini API | Free tier (15 requests/min, 1M tokens/day) |
+| ElevenLabs TTS | Free tier (10,000 characters/month) or browser TTS at $0 |
+| Vercel hosting | Free for personal use |
+
+## Testing
+
+258 unit tests across 11 suites cover all application layers:
+
+- **Library modules** -- Storage operations, Gemini client initialization, prompt generation
+- **React hooks** -- Conversation management, speech recognition lifecycle, TTS queue and fallback
+- **Components** -- ChatBubble rendering, MewtwoCharacter animation states, StoryTimeButton toggling
+- **API routes** -- Chat streaming endpoint, TTS endpoint with fallback behavior
+
+```bash
+npm test
+```
+
+## Safety
+
+All content is designed for children ages 5 and up:
+
+- System prompts enforce age-appropriate, positive, educational responses
+- Mewtwo is configured as a kind, patient, and encouraging character
+- No external links, no violent or scary themes
+- Conversation history is accessible to parents via the browser
 
 ## Customization
 
-### Adjust Mewtwo's Personality
-
-Edit `src/lib/mewtwo-prompts.ts` to modify:
-- Character traits
-- Communication style
-- Topics and knowledge
-- Story generation parameters
-
-### Change Voice Settings
-
-In `src/app/api/tts/route.ts`, adjust:
-- Voice ID (ElevenLabs voice selection)
-- Stability and similarity settings
-- Voice model
-
-### Modify UI Theme
-
-In `tailwind.config.js`, customize:
-- Color scheme (mewtwo-purple, etc.)
-- Breakpoints for responsive design
-- Animation styles
-
-## Deployment
-
-### Deploy to Vercel
-
-1. Push your code to GitHub
-2. Import the project in [Vercel](https://vercel.com)
-3. Add environment variables in Vercel dashboard
-4. Deploy!
-
-The app will be available at `https://your-app.vercel.app`
-
-### PWA Installation
-
-Users can install the app on their device:
-- **iOS**: Safari → Share → Add to Home Screen
-- **Android**: Chrome → Menu → Add to Home Screen
-
-## Cost Considerations
-
-- **OpenAI GPT-4 Turbo**: ~$0.01-0.03 per conversation
-- **ElevenLabs**: ~$0.18-0.30 per 1000 characters (free tier: 10k chars/month)
-- **Vercel Hosting**: Free for personal use
-- **Web Speech API**: Free (browser native)
-
-## Safety & Content
-
-The app includes built-in safety measures:
-- Age-appropriate content filtering in system prompts
-- No external links or inappropriate content
-- Gentle, educational, and positive interactions
-- Parent controls via conversation history access
-
-## Future Enhancements
-
-- [ ] Multiple Pokémon characters
-- [ ] Voice cloning from movie audio
-- [ ] Mini-games (trivia, counting)
-- [ ] 3D character animations
-- [ ] Multi-language support
-- [ ] Usage limits and parental controls
-- [ ] Cloud sync across devices (Supabase)
+- **Personality** -- Edit `src/lib/mewtwo-prompts.ts` to adjust Mewtwo's character traits, communication style, or story themes
+- **Voice** -- Change the ElevenLabs voice ID in `src/app/api/tts/route.ts`
+- **Theme** -- Modify colors and animations in `tailwind.config.js`
 
 ## License
 
-This project is for personal use. Pokémon is a trademark of Nintendo/Game Freak/Creatures Inc.
-
-## Support
-
-For issues or questions, please open an issue on GitHub.
-
----
-
-Made with ❤️ for Damian and kids who love Pokémon
+This project is for personal and educational use. Pokemon is a trademark of Nintendo / Game Freak / Creatures Inc.
