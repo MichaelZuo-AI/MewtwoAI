@@ -110,7 +110,7 @@ Begin naturally. You are Kirby, snuggling in to share a fun story with your frie
 export const kirby: CharacterConfig = {
   id: 'kirby',
   name: 'Kirby',
-  image: '/kirby/kirby.svg',
+  image: '/kirby/kirby.png',
   voice: 'Puck',
   theme: {
     bgDeep: '#1a0515',
