@@ -266,10 +266,10 @@ describe('kirby config', () => {
     expect(kirby.voice).toBe('Puck');
   });
 
-  it('has theme with navy/pink colors', () => {
-    expect(kirby.theme.bgDeep).toBe('#0a1628');
-    expect(kirby.theme.bgMid).toBe('#1a2744');
-    expect(kirby.theme.accent).toBe('#ec4899');
+  it('has theme with warm pink Dream Land colors', () => {
+    expect(kirby.theme.bgDeep).toBe('#1a0515');
+    expect(kirby.theme.bgMid).toBe('#2e1228');
+    expect(kirby.theme.accent).toBe('#f472b6');
   });
 
   it('has aura colors for all voice states', () => {

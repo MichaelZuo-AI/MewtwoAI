@@ -113,14 +113,14 @@ export const kirby: CharacterConfig = {
   image: '/kirby/kirby.svg',
   voice: 'Puck',
   theme: {
-    bgDeep: '#0a1628',
-    bgMid: '#1a2744',
-    accent: '#ec4899',
+    bgDeep: '#1a0515',
+    bgMid: '#2e1228',
+    accent: '#f472b6',
     aura: {
-      idle: 'rgba(236, 72, 153, 0.3)',
-      listening: 'rgba(59, 130, 246, 0.4)',
-      speaking: 'rgba(236, 72, 153, 0.5)',
-      processing: 'rgba(234, 179, 8, 0.4)',
+      idle: 'rgba(244, 114, 182, 0.3)',
+      listening: 'rgba(251, 191, 214, 0.4)',
+      speaking: 'rgba(244, 114, 182, 0.5)',
+      processing: 'rgba(251, 146, 191, 0.4)',
     },
     ring: {
       idle: 'bg-pink-400/50',

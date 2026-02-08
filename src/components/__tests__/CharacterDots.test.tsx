@@ -212,7 +212,7 @@ describe('CharacterDots', () => {
       const kirbyLabel = screen.getByRole('tab', { name: 'Kirby' })
 
       expect(kirbyLabel).toHaveStyle({
-        backgroundColor: '#ec4899', // kirby.theme.accent
+        backgroundColor: '#f472b6', // kirby.theme.accent
       })
     })
 
