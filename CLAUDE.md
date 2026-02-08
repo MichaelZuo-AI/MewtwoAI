@@ -4,41 +4,34 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**MewtwoAI** - An interactive voice chat web application where kids can talk with Mewtwo, the legendary Pokémon character. Built with Next.js 14, React, TypeScript, and Google Gemini 2.5 Flash Native Audio Dialog for real-time bidirectional voice.
+**AI Dream Buddies** — An interactive voice chat web app where kids talk with their favorite characters to **improve English**. Built with Next.js 14, React, TypeScript, and Google Gemini 2.5 Flash Native Audio Dialog for real-time bidirectional voice.
 
 ### Key Features
+- 4 characters: Mewtwo, Kirby, Dragonite, Magolor — each with unique voice, personality, and theme
+- Swipe left/right to switch characters with slide animations
 - Real-time bidirectional voice via Gemini Live API (WebSocket)
-- AI-powered responses with kid-friendly Mewtwo personality
-- Voice Activity Detection handles turn-taking automatically
-- Story time mode for bedtime stories
-- Conversation history persistence (via transcriptions)
-- Mobile-first PWA design
+- English learning focus: gentle correction, simple words, one new word at a time
+- Story time mode for bedtime stories (3-5 min, continuous)
+- Bedtime mode (8:30 PM KST): all characters gently encourage sleep
+- Voice Activity Detection handles turn-taking (2s chat, 5s story)
+- Conversation history persistence via transcriptions
+- Mobile-first PWA design, large touch targets for 5-year-olds
 
 ## Development Commands
 
 ### Setup
 ```bash
-# Install dependencies
 npm install
-
-# Create .env.local file with required API keys
-cp .env.example .env.local
-# Then edit .env.local with your actual API keys
+cp .env.example .env.local   # Then edit with your API key
 ```
 
 ### Development
 ```bash
-# Start development server (http://localhost:3000)
-npm run dev
-
-# Build for production
-npm run build
-
-# Start production server
-npm start
-
-# Run linter
-npm run lint
+npm run dev        # Start dev server (http://localhost:3000)
+npm run build      # Build for production
+npm start          # Start production server
+npm run lint       # Run linter
+npm test           # Run all 431 unit tests (13 suites)
 ```
 
 ### Environment Variables Required
@@ -53,87 +46,120 @@ Browser microphone -> PCM 16kHz -> Gemini WebSocket -> PCM 24kHz -> speaker
                                                     -> transcriptions -> chat bubbles
 ```
 
+### Component Tree
+```
+page.tsx (selectedCharacterId in localStorage)
+  ├── CharacterSelect (grid of tappable portraits)
+  └── VoiceChat(character, onBack) ← swipe left/right to switch
+       ├── useSwipeGesture hook (touch events, 80px threshold)
+       ├── CharacterDisplay (animated character + aura + crossfade)
+       ├── CharacterDots (active character indicator)
+       ├── useGeminiLive(character) → WebSocket + audio + KST bedtime
+       └── MicButton, ChatPeek, ChatDrawer, SettingsMenu, StoryTimeButton
+```
+
 ### Tech Stack
 - **Frontend**: Next.js 14 App Router, React 18, TypeScript
-- **Styling**: Tailwind CSS with custom Mewtwo theme
-- **AI + Voice**: Google Gemini 2.5 Flash Native Audio Dialog (`@google/genai` SDK)
+- **Styling**: Tailwind CSS with per-character themes
+- **AI + Voice**: Google Gemini 2.5 Flash Native Audio Dialog (`@google/genai` v1.5.0)
 - **Storage**: LocalStorage for offline-first experience
-- **Deployment**: Vercel recommended
+- **Testing**: Jest 30, React Testing Library (431 tests)
+- **Deployment**: Vercel (auto-deploys on push to main)
 
 ### Project Structure
 ```
 src/
-├── app/                    # Next.js app directory
-│   ├── api/               # API routes
-│   │   └── gemini-token/  # Ephemeral token endpoint for Live API
-│   ├── page.tsx           # Main page component
-│   ├── layout.tsx         # Root layout with PWA config
-│   └── globals.css        # Global styles
-├── components/            # React components
-│   ├── VoiceChat.tsx      # Main voice chat interface
-│   ├── MewtwoCharacter.tsx # Animated character display
-│   ├── ChatBubble.tsx     # Message bubble component
-│   └── StoryTimeButton.tsx # Story mode toggle
-├── hooks/                 # Custom React hooks
-│   ├── useGeminiLive.ts   # Central hook: token, WebSocket, audio, transcription
-│   ├── useAudioCapture.ts # Microphone capture -> PCM 16kHz base64
-│   └── useAudioPlayback.ts # PCM 24kHz base64 -> speaker playback queue
-├── lib/                   # Utility libraries
-│   ├── mewtwo-prompts.ts  # AI personality system prompts
-│   └── storage.ts         # LocalStorage utilities
-└── types/                 # TypeScript type definitions
-    └── chat.ts
+├── app/
+│   ├── api/gemini-token/     # Ephemeral token endpoint (validates characterId, passes bedtime)
+│   ├── page.tsx              # Character selection + swipe wrapper + slide animations
+│   ├── layout.tsx            # Root layout with PWA config
+│   └── globals.css           # All animations (float, speak, listen, think, slide, aura)
+├── components/
+│   ├── VoiceChat.tsx         # Main voice chat interface
+│   ├── CharacterDisplay.tsx  # Animated character + aura + resolveImage() + crossfade
+│   ├── CharacterSelect.tsx   # Character selection grid
+│   ├── CharacterDots.tsx     # Active character dot indicator
+│   ├── ChatDrawer.tsx        # Expandable chat transcript
+│   ├── ChatPeek.tsx          # Latest message peek
+│   ├── MicButton.tsx         # Microphone control
+│   ├── SettingsMenu.tsx      # Settings panel
+│   └── StoryTimeButton.tsx   # Story mode toggle
+├── hooks/
+│   ├── useGeminiLive.ts      # Central orchestrator: token, WebSocket, audio, bedtime
+│   ├── useAudioCapture.ts    # Microphone capture -> PCM 16kHz base64
+│   ├── useAudioPlayback.ts   # PCM 24kHz base64 -> speaker playback queue
+│   └── useSwipeGesture.ts    # Touch swipe detection (horizontal/vertical locking)
+├── lib/
+│   ├── characters/           # Character configs (one file per character)
+│   │   ├── index.ts          # Registry: getCharacter, getAllCharacters, getNext/Previous
+│   │   ├── mewtwo.ts         # Mewtwo: Fenrir voice, purple theme, bedtime addendum
+│   │   ├── kirby.ts          # Kirby: Puck voice, pink theme, bedtime addendum
+│   │   ├── dragonite.ts      # Dragonite: Aoede voice, orange theme, bedtime addendum
+│   │   └── magolor.ts        # Magolor: Kore voice, indigo theme, bedtime addendum
+│   └── storage.ts            # LocalStorage utilities
+└── types/
+    ├── character.ts           # CharacterConfig, CharacterTheme, CharacterStateImages
+    └── chat.ts                # Message, VoiceState, LiveConnectionState
 ```
 
 ### Key Design Decisions
 
-1. **Gemini Native Audio Dialog**: Bidirectional WebSocket — no separate STT/TTS services needed
-2. **Ephemeral Tokens**: Server-side token creation keeps API key secure; browser connects directly
-3. **VAD (Voice Activity Detection)**: Gemini handles turn-taking; 2s silence threshold for kids
-4. **LocalStorage First**: Offline-first with conversation persistence via transcriptions
-5. **Mobile-First UI**: Large touch targets, responsive design, PWA capabilities
-6. **Safety Built-In**: Age-appropriate content filtering in system prompts
+1. **Multi-character system**: Each character is a self-contained config file. Adding a character = new file + one import. No type changes needed
+2. **Gemini Native Audio Dialog**: Bidirectional WebSocket — no separate STT/TTS services, $0 cost
+3. **Ephemeral Tokens**: Server-side token creation keeps API key secure; browser connects directly
+4. **VAD**: Gemini handles turn-taking; 2s silence for chat, 5s for story mode
+5. **Bedtime via KST**: Uses `Intl.DateTimeFormat.formatToParts()` with `Asia/Seoul` timezone — NOT device local time, NOT `new Date(toLocaleString())`
+6. **State-based images ready**: `CharacterStateImages` type + `resolveImage()` + crossfade infrastructure exists. Currently all characters use single image string
+7. **Swipe navigation**: Circular character switching with direction locking, drag resistance, 80px threshold
 
-### AI Personality Configuration
+### Character System
 
-Mewtwo's personality is defined in `src/lib/mewtwo-prompts.ts`:
-- Wise, powerful, but kind and patient
-- Kid-friendly language (5-year-old appropriate)
-- Short responses (2-4 sentences)
-- Encouraging and educational
-- Story time mode for longer narratives
-- Voice: Fenrir (excitable, kid-friendly — configured in `useGeminiLive.ts`)
+Each character file (`src/lib/characters/*.ts`) exports a `CharacterConfig` with:
+- `id`, `name`, `image` (path to artwork in `public/`)
+- `voice` (Gemini voice name)
+- `theme` (background colors, aura colors per voice state, ring colors, mic gradient)
+- `getSystemPrompt(isStoryMode, isBedtime?, kstTimeString?)` — returns full system instruction
 
-### Browser Compatibility
+| Character | Voice | Theme Color | Personality |
+|-----------|-------|-------------|-------------|
+| Mewtwo | Fenrir | Purple | Wise, philosophical protector |
+| Kirby | Puck | Pink | Happy, bubbly, food-obsessed |
+| Dragonite | Aoede | Orange | Warm, gentle, huggable giant |
+| Magolor | Kore | Indigo | Clever, magical, reformed trickster |
 
-- **Chrome/Edge**: Full support (recommended)
-- **Safari (iOS/macOS)**: Full support
-- **Android Chrome**: Full support
-- **Firefox**: Limited (AudioContext/getUserMedia may vary)
+### Bedtime Mode
+
+Triggers at 8:30 PM KST. Each character has a `bedtimeAddendum(kstTimeString)` function that appends to the system prompt. The addendum includes:
+- The actual Korean time (e.g. "20:45")
+- Explicit instruction: "do NOT use any other time source"
+- "It IS nighttime" assertion (prevents Gemini from using its UTC clock)
+- In-character sleep encouragement
+
+**Why this matters**: Gemini has an internal UTC clock and WILL tell the child "it's morning" if you don't override it with the actual local time.
 
 ## Important Notes
 
 ### When Making Changes
-
 - Always test voice features on actual mobile devices (iOS Safari, Android Chrome)
-- Keep responses kid-friendly and age-appropriate
-- Large UI elements for 5-year-old usability
-- Verify conversation history persists across page reloads
-- The `useGeminiLive` hook is the central orchestrator — changes to audio flow go there
+- Keep responses kid-friendly and age-appropriate for a 5-year-old
+- Large UI elements for small fingers
+- The `useGeminiLive` hook is the central orchestrator — audio flow changes go there
+- Character prompts focus on English learning — preserve the "HELPING DAMIAN WITH ENGLISH" section
+- Use `@google/genai` SDK (NOT `@google/generative-ai`)
+- AudioContext MUST use native sample rate (48kHz), downsample to 16kHz
+
+### Adding a New Character
+1. Create `src/lib/characters/newchar.ts` with `CharacterConfig`
+2. Add import + entry in `src/lib/characters/index.ts`
+3. Drop artwork at `public/newchar/newchar.png`
+4. That's it — circular navigation, selection screen, and theme all auto-adapt
 
 ### Safety & Content
 - All content must be G-rated and educational
 - No external links or inappropriate references
-- System prompts include content filtering
-- Parent controls via conversation history access
-
-### Future Enhancements
-- Multiple Pokémon characters
-- Voice cloning from movie audio
-- Mini-games and activities
-- Cloud sync with Supabase
-- Parental controls dashboard
+- System prompts include content filtering and "never break character" rules
+- Parent has access to conversation history
 
 ### Cost Considerations
-- Gemini API: Free tier available
+- Gemini API: Free tier (no cost)
 - Vercel: Free for personal use
