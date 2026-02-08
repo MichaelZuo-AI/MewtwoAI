@@ -15,11 +15,3 @@ export interface Conversation {
 export type VoiceState = 'idle' | 'listening' | 'speaking' | 'processing';
 
 export type LiveConnectionState = 'disconnected' | 'connecting' | 'connected' | 'error';
-
-export interface VoiceChatState {
-  isListening: boolean;
-  isSpeaking: boolean;
-  isProcessing: boolean;
-  transcript: string;
-  error: string | null;
-}
