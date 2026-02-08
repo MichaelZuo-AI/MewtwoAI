@@ -112,7 +112,7 @@ Begin naturally. You are Dragonite, settling in with your little buddy Damian, r
 export const dragonite: CharacterConfig = {
   id: 'dragonite',
   name: 'Dragonite',
-  image: '/dragonite/dragonite.svg',
+  image: '/dragonite/dragonite.png',
   voice: 'Aoede',
   theme: {
     bgDeep: '#1a0d05',

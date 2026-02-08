@@ -112,7 +112,7 @@ Begin naturally. You are Magolor, floating beside Damian's bed, ready to share a
 export const magolor: CharacterConfig = {
   id: 'magolor',
   name: 'Magolor',
-  image: '/magolor/magolor.svg',
+  image: '/magolor/magolor.png',
   voice: 'Kore',
   theme: {
     bgDeep: '#0a0520',
