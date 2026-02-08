@@ -132,8 +132,12 @@ describe('mewtwo config', () => {
     expect(mewtwo.name).toBe('Mewtwo');
   });
 
-  it('has image path', () => {
-    expect(mewtwo.image).toBe('/mewtwo/mewtwo.png');
+  it('has state-based image object', () => {
+    expect(typeof mewtwo.image).toBe('object');
+    const img = mewtwo.image as { idle: string; speaking?: string; processing?: string };
+    expect(img.idle).toBe('/mewtwo/mewtwo.png');
+    expect(img.speaking).toBe('/mewtwo/mega-mewtwo-y.png');
+    expect(img.processing).toBe('/mewtwo/mewtwo-attack.png');
   });
 
   it('uses Fenrir voice', () => {
@@ -283,6 +287,35 @@ describe('mewtwo config', () => {
       expect(storyPrompt).toContain('5 and learning English');
     });
   });
+
+  describe('bedtime prompt', () => {
+    it('appends bedtime addendum when isBedtime is true', () => {
+      const prompt = mewtwo.getSystemPrompt(false, true);
+      expect(prompt).toContain('BEDTIME MODE');
+      expect(prompt).toContain('8:30 PM');
+    });
+
+    it('does not include bedtime addendum when isBedtime is false', () => {
+      const prompt = mewtwo.getSystemPrompt(false, false);
+      expect(prompt).not.toContain('BEDTIME MODE');
+    });
+
+    it('does not include bedtime addendum when isBedtime is undefined', () => {
+      const prompt = mewtwo.getSystemPrompt(false);
+      expect(prompt).not.toContain('BEDTIME MODE');
+    });
+
+    it('includes bedtime addendum with story mode', () => {
+      const prompt = mewtwo.getSystemPrompt(true, true);
+      expect(prompt).toContain('bedtime story');
+      expect(prompt).toContain('BEDTIME MODE');
+    });
+
+    it('has in-character bedtime language', () => {
+      const prompt = mewtwo.getSystemPrompt(false, true);
+      expect(prompt).toContain('legendary');
+    });
+  });
 });
 
 describe('kirby config', () => {
@@ -399,6 +432,25 @@ describe('kirby config', () => {
       });
     });
   });
+
+  describe('bedtime prompt', () => {
+    it('appends bedtime addendum when isBedtime is true', () => {
+      const prompt = kirby.getSystemPrompt(false, true);
+      expect(prompt).toContain('BEDTIME MODE');
+      expect(prompt).toContain('8:30 PM');
+    });
+
+    it('does not include bedtime addendum when isBedtime is false', () => {
+      const prompt = kirby.getSystemPrompt(false, false);
+      expect(prompt).not.toContain('BEDTIME MODE');
+    });
+
+    it('has in-character bedtime language', () => {
+      const prompt = kirby.getSystemPrompt(false, true);
+      expect(prompt).toContain('sleepy');
+      expect(prompt).toContain('Dream Land');
+    });
+  });
 });
 
 describe('dragonite config', () => {
@@ -508,6 +560,25 @@ describe('dragonite config', () => {
       inappropriateWords.forEach(word => {
         expect(prompt.toLowerCase()).not.toContain(word);
       });
+    });
+  });
+
+  describe('bedtime prompt', () => {
+    it('appends bedtime addendum when isBedtime is true', () => {
+      const prompt = dragonite.getSystemPrompt(false, true);
+      expect(prompt).toContain('BEDTIME MODE');
+      expect(prompt).toContain('8:30 PM');
+    });
+
+    it('does not include bedtime addendum when isBedtime is false', () => {
+      const prompt = dragonite.getSystemPrompt(false, false);
+      expect(prompt).not.toContain('BEDTIME MODE');
+    });
+
+    it('has in-character bedtime language', () => {
+      const prompt = dragonite.getSystemPrompt(false, true);
+      expect(prompt).toContain('fly');
+      expect(prompt).toContain('sleep');
     });
   });
 });
@@ -624,6 +695,25 @@ describe('magolor config', () => {
       inappropriateWords.forEach(word => {
         expect(prompt.toLowerCase()).not.toContain(word);
       });
+    });
+  });
+
+  describe('bedtime prompt', () => {
+    it('appends bedtime addendum when isBedtime is true', () => {
+      const prompt = magolor.getSystemPrompt(false, true);
+      expect(prompt).toContain('BEDTIME MODE');
+      expect(prompt).toContain('8:30 PM');
+    });
+
+    it('does not include bedtime addendum when isBedtime is false', () => {
+      const prompt = magolor.getSystemPrompt(false, false);
+      expect(prompt).not.toContain('BEDTIME MODE');
+    });
+
+    it('has in-character bedtime language', () => {
+      const prompt = magolor.getSystemPrompt(false, true);
+      expect(prompt).toContain('dream spell');
+      expect(prompt).toContain('magic');
     });
   });
 });

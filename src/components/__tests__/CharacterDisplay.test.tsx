@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
-import CharacterDisplay from '../CharacterDisplay';
+import CharacterDisplay, { resolveImage } from '../CharacterDisplay';
 import { VoiceState } from '@/types/chat';
+import { CharacterStateImages } from '@/types/character';
 import { mewtwo } from '@/lib/characters/mewtwo';
 import { kirby } from '@/lib/characters/kirby';
 
@@ -175,5 +176,41 @@ describe('CharacterDisplay', () => {
         unmount();
       });
     });
+  });
+});
+
+describe('resolveImage', () => {
+  const stateImages: CharacterStateImages = {
+    idle: '/mewtwo/mewtwo.png',
+    listening: '/mewtwo/mewtwo.png',
+    speaking: '/mewtwo/mega-mewtwo-y.png',
+    processing: '/mewtwo/mewtwo-attack.png',
+  };
+
+  it('returns the string directly for string images', () => {
+    expect(resolveImage('/kirby/kirby.png', 'idle')).toBe('/kirby/kirby.png');
+    expect(resolveImage('/kirby/kirby.png', 'speaking')).toBe('/kirby/kirby.png');
+  });
+
+  it('returns idle image for idle state', () => {
+    expect(resolveImage(stateImages, 'idle')).toBe('/mewtwo/mewtwo.png');
+  });
+
+  it('returns listening image for listening state', () => {
+    expect(resolveImage(stateImages, 'listening')).toBe('/mewtwo/mewtwo.png');
+  });
+
+  it('returns speaking image for speaking state', () => {
+    expect(resolveImage(stateImages, 'speaking')).toBe('/mewtwo/mega-mewtwo-y.png');
+  });
+
+  it('returns processing image for processing state', () => {
+    expect(resolveImage(stateImages, 'processing')).toBe('/mewtwo/mewtwo-attack.png');
+  });
+
+  it('falls back to idle when state image is not defined', () => {
+    const partial: CharacterStateImages = { idle: '/char/idle.png' };
+    expect(resolveImage(partial, 'speaking')).toBe('/char/idle.png');
+    expect(resolveImage(partial, 'processing')).toBe('/char/idle.png');
   });
 });

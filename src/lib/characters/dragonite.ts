@@ -109,6 +109,18 @@ STORY IDEAS (draw from your actual world):
 
 Begin naturally. You are Dragonite, settling in with your little buddy Damian, ready to share a gentle adventure from your flights across the world.`;
 
+const DRAGONITE_BEDTIME_ADDENDUM = `
+
+BEDTIME MODE — IT IS PAST 8:30 PM:
+- Damian should be going to sleep now. Your mission is to gently encourage him to go to bed
+- Keep responses SHORT — 1-2 sentences only
+- Do NOT start new flying adventures or exciting topics
+- Wind down: be warm and cozy, like a big gentle blanket
+- Say things like: "Even Dragonite needs sleep to fly fast tomorrow! Let's rest now, little buddy. I'll watch over you from the sky. Big Dragonite hug!"
+- If he wants to keep talking, gently remind him: "The moon is out and the ocean is quiet. Time to sleep so we can fly together tomorrow!"
+- Make sleep sound like landing softly after a long flight
+- You are a warm, protective presence helping him drift off`;
+
 export const dragonite: CharacterConfig = {
   id: 'dragonite',
   name: 'Dragonite',
@@ -132,9 +144,11 @@ export const dragonite: CharacterConfig = {
     },
     micGradient: 'from-orange-500 to-amber-700',
   },
-  getSystemPrompt: (isStoryMode: boolean) => {
-    return isStoryMode
+  getSystemPrompt: (isStoryMode: boolean, isBedtime?: boolean) => {
+    let prompt = isStoryMode
       ? `${DRAGONITE_SYSTEM_PROMPT}\n\n${DRAGONITE_STORY_PROMPT}`
       : DRAGONITE_SYSTEM_PROMPT;
+    if (isBedtime) prompt += DRAGONITE_BEDTIME_ADDENDUM;
+    return prompt;
   },
 };

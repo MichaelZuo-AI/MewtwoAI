@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import { getAllCharacters } from '@/lib/characters';
+import { resolveImage } from './CharacterDisplay';
 
 interface CharacterSelectProps {
   onSelect: (id: string) => void;
@@ -25,7 +26,7 @@ export default function CharacterSelect({ onSelect }: CharacterSelectProps) {
               className="w-40 h-40 rounded-full overflow-hidden relative"
               style={{ boxShadow: `0 0 40px ${char.theme.accent}` }}
             >
-              <Image src={char.image} alt={char.name} fill className="object-contain" />
+              <Image src={resolveImage(char.image, 'idle')} alt={char.name} fill className="object-contain" />
             </div>
             <span className="text-white text-lg font-medium">{char.name}</span>
           </button>

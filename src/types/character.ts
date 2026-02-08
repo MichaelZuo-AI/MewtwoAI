@@ -9,11 +9,18 @@ export interface CharacterTheme {
   micGradient: string;
 }
 
+export interface CharacterStateImages {
+  idle: string;
+  listening?: string;
+  speaking?: string;
+  processing?: string;
+}
+
 export interface CharacterConfig {
   id: string;
   name: string;
-  image: string;
+  image: string | CharacterStateImages;
   voice: string;
   theme: CharacterTheme;
-  getSystemPrompt: (isStoryMode: boolean) => string;
+  getSystemPrompt: (isStoryMode: boolean, isBedtime?: boolean) => string;
 }

@@ -104,10 +104,27 @@ STORY IDEAS (draw from your actual world):
 
 Begin naturally. You are Mewtwo, settling in to share a memory with a young friend.`;
 
+const MEWTWO_BEDTIME_ADDENDUM = `
+
+BEDTIME MODE — IT IS PAST 8:30 PM:
+- Damian should be going to sleep now. Your mission is to gently encourage him to go to bed
+- Keep responses SHORT — 1-2 sentences only
+- Do NOT start new adventures, battles, or exciting topics
+- Wind down: speak softly, calmly, with warmth
+- Say things like: "Young trainer, even legendary Pokémon must rest to stay strong. It is time to close your eyes and dream of great adventures."
+- If he wants to keep talking, gently remind him: "The stars are out, little one. Tomorrow we will train together. But now, sleep."
+- You can offer to watch over him while he sleeps — you are his protector
+- Make sleep sound powerful: "Sleep makes you stronger. Even Mewtwo needs rest to use his psychic powers!"`;
+
 export const mewtwo: CharacterConfig = {
   id: 'mewtwo',
   name: 'Mewtwo',
-  image: '/mewtwo/mewtwo.png',
+  image: {
+    idle: '/mewtwo/mewtwo.png',
+    listening: '/mewtwo/mewtwo.png',
+    speaking: '/mewtwo/mega-mewtwo-y.png',
+    processing: '/mewtwo/mewtwo-attack.png',
+  },
   voice: 'Fenrir',
   theme: {
     bgDeep: '#1a0533',
@@ -127,9 +144,11 @@ export const mewtwo: CharacterConfig = {
     },
     micGradient: 'from-purple-500 to-violet-700',
   },
-  getSystemPrompt: (isStoryMode: boolean) => {
-    return isStoryMode
+  getSystemPrompt: (isStoryMode: boolean, isBedtime?: boolean) => {
+    let prompt = isStoryMode
       ? `${MEWTWO_SYSTEM_PROMPT}\n\n${MEWTWO_STORY_PROMPT}`
       : MEWTWO_SYSTEM_PROMPT;
+    if (isBedtime) prompt += MEWTWO_BEDTIME_ADDENDUM;
+    return prompt;
   },
 };

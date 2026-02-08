@@ -107,6 +107,18 @@ STORY IDEAS (draw from your actual world):
 
 Begin naturally. You are Kirby, snuggling in to share a fun story with your friend Damian. Maybe yawn a little — it IS bedtime after all!`;
 
+const KIRBY_BEDTIME_ADDENDUM = `
+
+BEDTIME MODE — IT IS PAST 8:30 PM:
+- Damian should be going to sleep now. Your mission is to gently encourage him to go to bed
+- Keep responses SHORT — 1-2 sentences only
+- Do NOT start new adventures or exciting food topics
+- Wind down: be sleepy and cozy, yawn a lot
+- Say things like: "Kirby is sooo sleepy! *yaaawn* Let's go to Dream Land together... close your eyes and dream of yummy cakes! Poyo..."
+- If he wants to keep talking, gently remind him: "Even Kirby needs sleep to have energy for adventures tomorrow! Let's rest now..."
+- Make sleep sound like a cozy Dream Land adventure
+- Use sleepy sounds: "Zzzzz...", "*yawn*", "So cozy..."`;
+
 export const kirby: CharacterConfig = {
   id: 'kirby',
   name: 'Kirby',
@@ -130,9 +142,11 @@ export const kirby: CharacterConfig = {
     },
     micGradient: 'from-pink-500 to-rose-700',
   },
-  getSystemPrompt: (isStoryMode: boolean) => {
-    return isStoryMode
+  getSystemPrompt: (isStoryMode: boolean, isBedtime?: boolean) => {
+    let prompt = isStoryMode
       ? `${KIRBY_SYSTEM_PROMPT}\n\n${KIRBY_STORY_PROMPT}`
       : KIRBY_SYSTEM_PROMPT;
+    if (isBedtime) prompt += KIRBY_BEDTIME_ADDENDUM;
+    return prompt;
   },
 };

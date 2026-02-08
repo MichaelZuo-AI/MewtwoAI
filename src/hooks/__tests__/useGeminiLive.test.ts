@@ -111,7 +111,7 @@ describe('useGeminiLive', () => {
   });
 
   describe('connect', () => {
-    it('fetches ephemeral token with characterId', async () => {
+    it('fetches ephemeral token with characterId and isBedtime', async () => {
       const { result } = renderHook(() => useGeminiLive(mewtwo));
 
       await act(async () => {
@@ -121,8 +121,14 @@ describe('useGeminiLive', () => {
       expect(mockFetch).toHaveBeenCalledWith('/api/gemini-token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ characterId: 'mewtwo', isStoryMode: false }),
+        body: expect.stringContaining('"characterId":"mewtwo"'),
       });
+
+      // Verify the body is valid JSON with expected fields
+      const body = JSON.parse(mockFetch.mock.calls[0][1].body);
+      expect(body.characterId).toBe('mewtwo');
+      expect(body.isStoryMode).toBe(false);
+      expect(typeof body.isBedtime).toBe('boolean');
     });
 
     it('sends kirby characterId when using kirby character', async () => {
@@ -132,11 +138,10 @@ describe('useGeminiLive', () => {
         await result.current.connect();
       });
 
-      expect(mockFetch).toHaveBeenCalledWith('/api/gemini-token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ characterId: 'kirby', isStoryMode: false }),
-      });
+      const body = JSON.parse(mockFetch.mock.calls[0][1].body);
+      expect(body.characterId).toBe('kirby');
+      expect(body.isStoryMode).toBe(false);
+      expect(typeof body.isBedtime).toBe('boolean');
     });
 
     it('creates GoogleGenAI with ephemeral token and v1alpha', async () => {
@@ -888,6 +893,94 @@ describe('useGeminiLive', () => {
 
       expect(result.current.connectionState).toBe('disconnected');
       expect(result.current.error).toBeNull();
+    });
+  });
+
+  describe('bedtime detection', () => {
+    beforeEach(() => {
+      jest.useFakeTimers();
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    it('sends isBedtime=true when time is after 8:30 PM', async () => {
+      jest.setSystemTime(new Date(2025, 0, 1, 21, 0, 0)); // 9:00 PM
+
+      const { result } = renderHook(() => useGeminiLive(mewtwo));
+
+      await act(async () => {
+        await result.current.connect();
+      });
+
+      const body = JSON.parse(mockFetch.mock.calls[0][1].body);
+      expect(body.isBedtime).toBe(true);
+    });
+
+    it('sends isBedtime=true when time is exactly 8:30 PM', async () => {
+      jest.setSystemTime(new Date(2025, 0, 1, 20, 30, 0)); // 8:30 PM
+
+      const { result } = renderHook(() => useGeminiLive(mewtwo));
+
+      await act(async () => {
+        await result.current.connect();
+      });
+
+      const body = JSON.parse(mockFetch.mock.calls[0][1].body);
+      expect(body.isBedtime).toBe(true);
+    });
+
+    it('sends isBedtime=false when time is before 8:30 PM', async () => {
+      jest.setSystemTime(new Date(2025, 0, 1, 14, 0, 0)); // 2:00 PM
+
+      const { result } = renderHook(() => useGeminiLive(mewtwo));
+
+      await act(async () => {
+        await result.current.connect();
+      });
+
+      const body = JSON.parse(mockFetch.mock.calls[0][1].body);
+      expect(body.isBedtime).toBe(false);
+    });
+
+    it('sends isBedtime=false at 8:29 PM', async () => {
+      jest.setSystemTime(new Date(2025, 0, 1, 20, 29, 0)); // 8:29 PM
+
+      const { result } = renderHook(() => useGeminiLive(mewtwo));
+
+      await act(async () => {
+        await result.current.connect();
+      });
+
+      const body = JSON.parse(mockFetch.mock.calls[0][1].body);
+      expect(body.isBedtime).toBe(false);
+    });
+
+    it('passes isBedtime to systemInstruction via getSystemPrompt', async () => {
+      jest.setSystemTime(new Date(2025, 0, 1, 21, 0, 0)); // 9:00 PM
+
+      const { result } = renderHook(() => useGeminiLive(mewtwo));
+
+      await act(async () => {
+        await result.current.connect();
+      });
+
+      const config = mockConnect.mock.calls[0][0].config;
+      expect(config.systemInstruction).toContain('BEDTIME MODE');
+    });
+
+    it('does not include bedtime in systemInstruction during daytime', async () => {
+      jest.setSystemTime(new Date(2025, 0, 1, 10, 0, 0)); // 10:00 AM
+
+      const { result } = renderHook(() => useGeminiLive(mewtwo));
+
+      await act(async () => {
+        await result.current.connect();
+      });
+
+      const config = mockConnect.mock.calls[0][0].config;
+      expect(config.systemInstruction).not.toContain('BEDTIME MODE');
     });
   });
 });

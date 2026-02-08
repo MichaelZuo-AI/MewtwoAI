@@ -127,11 +127,17 @@ export function useGeminiLive(character: CharacterConfig) {
     setConnectionState(isReconnect ? 'reconnecting' : 'connecting');
 
     try {
+      // Compute bedtime based on device local time (8:30 PM+)
+      const now = new Date();
+      const hour = now.getHours();
+      const minutes = now.getMinutes();
+      const isBedtime = hour > 20 || (hour === 20 && minutes >= 30);
+
       // 1. Get ephemeral token from our server
       const res = await fetch('/api/gemini-token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ characterId: character.id, isStoryMode: isStoryModeRef.current }),
+        body: JSON.stringify({ characterId: character.id, isStoryMode: isStoryModeRef.current, isBedtime }),
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
@@ -263,7 +269,7 @@ export function useGeminiLive(character: CharacterConfig) {
               prebuiltVoiceConfig: { voiceName: character.voice },
             },
           },
-          systemInstruction: character.getSystemPrompt(isStoryModeRef.current),
+          systemInstruction: character.getSystemPrompt(isStoryModeRef.current, isBedtime),
           realtimeInputConfig: {
             activityHandling: isStoryModeRef.current ? ActivityHandling.NO_INTERRUPTION : ActivityHandling.START_OF_ACTIVITY_INTERRUPTS,
             automaticActivityDetection: {

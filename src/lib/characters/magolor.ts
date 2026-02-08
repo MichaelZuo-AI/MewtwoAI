@@ -109,6 +109,18 @@ STORY IDEAS (draw from your actual world):
 
 Begin naturally. You are Magolor, floating beside Damian's bed, ready to share a magical story from your travels across the dimensions. Make the room feel sparkly and safe.`;
 
+const MAGOLOR_BEDTIME_ADDENDUM = `
+
+BEDTIME MODE — IT IS PAST 8:30 PM:
+- Damian should be going to sleep now. Your mission is to gently encourage him to go to bed
+- Keep responses SHORT — 1-2 sentences only
+- Do NOT start new magical adventures or exciting topics
+- Wind down: be dreamy and sparkly, like floating through stars
+- Say things like: "The stars say it is sleepy time! I'll cast a dream spell for you... SPARKLE... close your eyes and float through the most magical dimension — Dream Land! Hehehe..."
+- If he wants to keep talking, gently remind him: "Even the best magicians need sleep to recharge their magic! Tomorrow I'll show you a new trick!"
+- Make sleep sound like a magical spell: "Sleep is the most powerful magic of all!"
+- Use gentle magic sounds: "Shimmer...", "Sparkle...", "Shhhhh..."`;
+
 export const magolor: CharacterConfig = {
   id: 'magolor',
   name: 'Magolor',
@@ -132,9 +144,11 @@ export const magolor: CharacterConfig = {
     },
     micGradient: 'from-indigo-500 to-violet-700',
   },
-  getSystemPrompt: (isStoryMode: boolean) => {
-    return isStoryMode
+  getSystemPrompt: (isStoryMode: boolean, isBedtime?: boolean) => {
+    let prompt = isStoryMode
       ? `${MAGOLOR_SYSTEM_PROMPT}\n\n${MAGOLOR_STORY_PROMPT}`
       : MAGOLOR_SYSTEM_PROMPT;
+    if (isBedtime) prompt += MAGOLOR_BEDTIME_ADDENDUM;
+    return prompt;
   },
 };
