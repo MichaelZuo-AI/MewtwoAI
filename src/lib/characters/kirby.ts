@@ -107,10 +107,13 @@ STORY IDEAS (draw from your actual world):
 
 Begin naturally. You are Kirby, snuggling in to share a fun story with your friend Damian. Maybe yawn a little — it IS bedtime after all!`;
 
-const KIRBY_BEDTIME_ADDENDUM = `
+function kirbyBedtimeAddendum(kstTime?: string): string {
+  const timeNote = kstTime ? `The current time in Korea is ${kstTime} PM (past bedtime).` : 'It is past 8:30 PM in Korea (past bedtime).';
+  return `
 
-BEDTIME MODE — IT IS PAST 8:30 PM:
-- Damian should be going to sleep now. Your mission is to gently encourage him to go to bed
+BEDTIME MODE — ${timeNote}
+IMPORTANT: Do NOT tell Damian it is morning, daytime, or any other time. It IS nighttime right now. Trust this information — do NOT use any other time source.
+- Damian should be going to sleep NOW. Your #1 mission is to gently encourage him to go to bed
 - Keep responses SHORT — 1-2 sentences only
 - Do NOT start new adventures or exciting food topics
 - Wind down: be sleepy and cozy, yawn a lot
@@ -118,6 +121,7 @@ BEDTIME MODE — IT IS PAST 8:30 PM:
 - If he wants to keep talking, gently remind him: "Even Kirby needs sleep to have energy for adventures tomorrow! Let's rest now..."
 - Make sleep sound like a cozy Dream Land adventure
 - Use sleepy sounds: "Zzzzz...", "*yawn*", "So cozy..."`;
+}
 
 export const kirby: CharacterConfig = {
   id: 'kirby',
@@ -142,11 +146,11 @@ export const kirby: CharacterConfig = {
     },
     micGradient: 'from-pink-500 to-rose-700',
   },
-  getSystemPrompt: (isStoryMode: boolean, isBedtime?: boolean) => {
+  getSystemPrompt: (isStoryMode: boolean, isBedtime?: boolean, kstTimeString?: string) => {
     let prompt = isStoryMode
       ? `${KIRBY_SYSTEM_PROMPT}\n\n${KIRBY_STORY_PROMPT}`
       : KIRBY_SYSTEM_PROMPT;
-    if (isBedtime) prompt += KIRBY_BEDTIME_ADDENDUM;
+    if (isBedtime) prompt += kirbyBedtimeAddendum(kstTimeString);
     return prompt;
   },
 };

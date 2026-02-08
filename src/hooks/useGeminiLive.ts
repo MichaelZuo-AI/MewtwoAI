@@ -137,12 +137,13 @@ export function useGeminiLive(character: CharacterConfig) {
       const hour = parseInt(kstParts.find(p => p.type === 'hour')!.value, 10);
       const minutes = parseInt(kstParts.find(p => p.type === 'minute')!.value, 10);
       const isBedtime = hour > 20 || (hour === 20 && minutes >= 30);
+      const kstTimeString = `${hour}:${String(minutes).padStart(2, '0')}`;
 
       // 1. Get ephemeral token from our server
       const res = await fetch('/api/gemini-token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ characterId: character.id, isStoryMode: isStoryModeRef.current, isBedtime }),
+        body: JSON.stringify({ characterId: character.id, isStoryMode: isStoryModeRef.current, isBedtime, kstTimeString }),
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
@@ -274,7 +275,7 @@ export function useGeminiLive(character: CharacterConfig) {
               prebuiltVoiceConfig: { voiceName: character.voice },
             },
           },
-          systemInstruction: character.getSystemPrompt(isStoryModeRef.current, isBedtime),
+          systemInstruction: character.getSystemPrompt(isStoryModeRef.current, isBedtime, kstTimeString),
           realtimeInputConfig: {
             activityHandling: isStoryModeRef.current ? ActivityHandling.NO_INTERRUPTION : ActivityHandling.START_OF_ACTIVITY_INTERRUPTS,
             automaticActivityDetection: {

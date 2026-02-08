@@ -22,5 +22,5 @@ export interface CharacterConfig {
   image: string | CharacterStateImages;
   voice: string;
   theme: CharacterTheme;
-  getSystemPrompt: (isStoryMode: boolean, isBedtime?: boolean) => string;
+  getSystemPrompt: (isStoryMode: boolean, isBedtime?: boolean, kstTimeString?: string) => string;
 }

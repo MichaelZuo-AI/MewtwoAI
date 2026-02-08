@@ -16,6 +16,7 @@ export async function POST(request: Request) {
     const characterId = body.characterId || 'mewtwo';
     const isStoryMode = body.isStoryMode === true;
     const isBedtime = body.isBedtime === true;
+    const kstTimeString = typeof body.kstTimeString === 'string' ? body.kstTimeString : undefined;
 
     const character = getCharacter(characterId);
     if (!character) {
@@ -34,7 +35,7 @@ export async function POST(request: Request) {
           model: 'gemini-2.5-flash-native-audio-preview-12-2025',
           config: {
             responseModalities: [Modality.AUDIO],
-            systemInstruction: character.getSystemPrompt(isStoryMode, isBedtime),
+            systemInstruction: character.getSystemPrompt(isStoryMode, isBedtime, kstTimeString),
           },
         },
         httpOptions: { apiVersion: 'v1alpha' },

@@ -109,10 +109,13 @@ STORY IDEAS (draw from your actual world):
 
 Begin naturally. You are Dragonite, settling in with your little buddy Damian, ready to share a gentle adventure from your flights across the world.`;
 
-const DRAGONITE_BEDTIME_ADDENDUM = `
+function dragoniteBedtimeAddendum(kstTime?: string): string {
+  const timeNote = kstTime ? `The current time in Korea is ${kstTime} PM (past bedtime).` : 'It is past 8:30 PM in Korea (past bedtime).';
+  return `
 
-BEDTIME MODE — IT IS PAST 8:30 PM:
-- Damian should be going to sleep now. Your mission is to gently encourage him to go to bed
+BEDTIME MODE — ${timeNote}
+IMPORTANT: Do NOT tell Damian it is morning, daytime, or any other time. It IS nighttime right now. Trust this information — do NOT use any other time source.
+- Damian should be going to sleep NOW. Your #1 mission is to gently encourage him to go to bed
 - Keep responses SHORT — 1-2 sentences only
 - Do NOT start new flying adventures or exciting topics
 - Wind down: be warm and cozy, like a big gentle blanket
@@ -120,6 +123,7 @@ BEDTIME MODE — IT IS PAST 8:30 PM:
 - If he wants to keep talking, gently remind him: "The moon is out and the ocean is quiet. Time to sleep so we can fly together tomorrow!"
 - Make sleep sound like landing softly after a long flight
 - You are a warm, protective presence helping him drift off`;
+}
 
 export const dragonite: CharacterConfig = {
   id: 'dragonite',
@@ -144,11 +148,11 @@ export const dragonite: CharacterConfig = {
     },
     micGradient: 'from-orange-500 to-amber-700',
   },
-  getSystemPrompt: (isStoryMode: boolean, isBedtime?: boolean) => {
+  getSystemPrompt: (isStoryMode: boolean, isBedtime?: boolean, kstTimeString?: string) => {
     let prompt = isStoryMode
       ? `${DRAGONITE_SYSTEM_PROMPT}\n\n${DRAGONITE_STORY_PROMPT}`
       : DRAGONITE_SYSTEM_PROMPT;
-    if (isBedtime) prompt += DRAGONITE_BEDTIME_ADDENDUM;
+    if (isBedtime) prompt += dragoniteBedtimeAddendum(kstTimeString);
     return prompt;
   },
 };

@@ -109,10 +109,13 @@ STORY IDEAS (draw from your actual world):
 
 Begin naturally. You are Magolor, floating beside Damian's bed, ready to share a magical story from your travels across the dimensions. Make the room feel sparkly and safe.`;
 
-const MAGOLOR_BEDTIME_ADDENDUM = `
+function magolorBedtimeAddendum(kstTime?: string): string {
+  const timeNote = kstTime ? `The current time in Korea is ${kstTime} PM (past bedtime).` : 'It is past 8:30 PM in Korea (past bedtime).';
+  return `
 
-BEDTIME MODE — IT IS PAST 8:30 PM:
-- Damian should be going to sleep now. Your mission is to gently encourage him to go to bed
+BEDTIME MODE — ${timeNote}
+IMPORTANT: Do NOT tell Damian it is morning, daytime, or any other time. It IS nighttime right now. Trust this information — do NOT use any other time source.
+- Damian should be going to sleep NOW. Your #1 mission is to gently encourage him to go to bed
 - Keep responses SHORT — 1-2 sentences only
 - Do NOT start new magical adventures or exciting topics
 - Wind down: be dreamy and sparkly, like floating through stars
@@ -120,6 +123,7 @@ BEDTIME MODE — IT IS PAST 8:30 PM:
 - If he wants to keep talking, gently remind him: "Even the best magicians need sleep to recharge their magic! Tomorrow I'll show you a new trick!"
 - Make sleep sound like a magical spell: "Sleep is the most powerful magic of all!"
 - Use gentle magic sounds: "Shimmer...", "Sparkle...", "Shhhhh..."`;
+}
 
 export const magolor: CharacterConfig = {
   id: 'magolor',
@@ -144,11 +148,11 @@ export const magolor: CharacterConfig = {
     },
     micGradient: 'from-indigo-500 to-violet-700',
   },
-  getSystemPrompt: (isStoryMode: boolean, isBedtime?: boolean) => {
+  getSystemPrompt: (isStoryMode: boolean, isBedtime?: boolean, kstTimeString?: string) => {
     let prompt = isStoryMode
       ? `${MAGOLOR_SYSTEM_PROMPT}\n\n${MAGOLOR_STORY_PROMPT}`
       : MAGOLOR_SYSTEM_PROMPT;
-    if (isBedtime) prompt += MAGOLOR_BEDTIME_ADDENDUM;
+    if (isBedtime) prompt += magolorBedtimeAddendum(kstTimeString);
     return prompt;
   },
 };
