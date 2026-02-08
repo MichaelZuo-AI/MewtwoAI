@@ -39,7 +39,16 @@ export function useAudioPlayback() {
   const enqueueAudio = useCallback(
     async (base64Pcm: string) => {
       const ctx = await getAudioContext();
-      const float32 = base64ToFloat32(base64Pcm);
+
+      let float32: Float32Array;
+      try {
+        float32 = base64ToFloat32(base64Pcm);
+      } catch {
+        // Corrupted audio chunk from Gemini — skip it silently
+        return;
+      }
+
+      if (float32.length === 0) return;
 
       const buffer = ctx.createBuffer(1, float32.length, OUTPUT_SAMPLE_RATE);
       buffer.getChannelData(0).set(float32);

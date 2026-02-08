@@ -222,15 +222,19 @@ export function useGeminiLive(character: CharacterConfig) {
                 const seemsDone = /the end|goodnight|sweet dreams|sleep well|close your eyes/i.test(lastAssistantText);
                 if (!seemsDone) {
                   storyContinuationCountRef.current++;
-                  sessionRef.current.sendClientContent({
-                    turns: [
-                      {
-                        role: 'user',
-                        parts: [{ text: 'Keep going, tell me what happens next!' }],
-                      },
-                    ],
-                    turnComplete: true,
-                  });
+                  try {
+                    sessionRef.current.sendClientContent({
+                      turns: [
+                        {
+                          role: 'user',
+                          parts: [{ text: 'Keep going, tell me what happens next!' }],
+                        },
+                      ],
+                      turnComplete: true,
+                    });
+                  } catch {
+                    // Session closed between check and send — ignore
+                  }
                 }
               }
             }
@@ -312,6 +316,7 @@ export function useGeminiLive(character: CharacterConfig) {
       isConnectingRef.current = false;
     }
   }, [
+    character,
     startCapture,
     stopCapture,
     enqueueAudio,
@@ -364,6 +369,8 @@ export function useGeminiLive(character: CharacterConfig) {
   const switchStoryMode = useCallback(
     (storyMode: boolean) => {
       setIsStoryMode(storyMode);
+      // Sync ref immediately so any reconnect uses the correct value
+      isStoryModeRef.current = storyMode;
 
       // Clear any pending story mode switch
       if (storyModeTimeoutRef.current) {
@@ -376,7 +383,6 @@ export function useGeminiLive(character: CharacterConfig) {
         disconnect();
         // Small delay to let the disconnect complete
         storyModeTimeoutRef.current = setTimeout(() => {
-          isStoryModeRef.current = storyMode;
           connect();
         }, 500);
       }
