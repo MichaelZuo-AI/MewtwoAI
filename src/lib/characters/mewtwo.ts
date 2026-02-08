@@ -119,12 +119,7 @@ BEDTIME MODE — IT IS PAST 8:30 PM:
 export const mewtwo: CharacterConfig = {
   id: 'mewtwo',
   name: 'Mewtwo',
-  image: {
-    idle: '/mewtwo/mewtwo.png',
-    listening: '/mewtwo/mewtwo.png',
-    speaking: '/mewtwo/mega-mewtwo-y.svg',
-    processing: '/mewtwo/mewtwo-attack.svg',
-  },
+  image: '/mewtwo/mewtwo.png',
   voice: 'Fenrir',
   theme: {
     bgDeep: '#1a0533',

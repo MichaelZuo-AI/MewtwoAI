@@ -132,12 +132,8 @@ describe('mewtwo config', () => {
     expect(mewtwo.name).toBe('Mewtwo');
   });
 
-  it('has state-based image object', () => {
-    expect(typeof mewtwo.image).toBe('object');
-    const img = mewtwo.image as { idle: string; speaking?: string; processing?: string };
-    expect(img.idle).toBe('/mewtwo/mewtwo.png');
-    expect(img.speaking).toBe('/mewtwo/mega-mewtwo-y.svg');
-    expect(img.processing).toBe('/mewtwo/mewtwo-attack.svg');
+  it('has image path', () => {
+    expect(mewtwo.image).toBe('/mewtwo/mewtwo.png');
   });
 
   it('uses Fenrir voice', () => {
