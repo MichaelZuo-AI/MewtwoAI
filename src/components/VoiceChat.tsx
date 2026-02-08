@@ -1,9 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useGeminiLive } from '@/hooks/useGeminiLive';
 import { useWakeLock } from '@/hooks/useWakeLock';
-import { useEffect } from 'react';
 import { CharacterConfig } from '@/types/character';
 import CharacterDisplay from './CharacterDisplay';
 import MicButton from './MicButton';

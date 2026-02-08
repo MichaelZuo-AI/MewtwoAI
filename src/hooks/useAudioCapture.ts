@@ -47,12 +47,19 @@ export function useAudioCapture({ onAudioData }: UseAudioCaptureOptions) {
   const audioContextRef = useRef<AudioContext | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const processorRef = useRef<ScriptProcessorNode | null>(null);
+  const isStartingRef = useRef(false);
   const onAudioDataRef = useRef(onAudioData);
   onAudioDataRef.current = onAudioData;
 
   const startCapture = useCallback(async () => {
+    // Guard against concurrent startCapture() calls
+    if (isStartingRef.current) return;
+    isStartingRef.current = true;
+
+    let stream: MediaStream | undefined;
+    let audioContext: AudioContext | undefined;
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
+      stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           channelCount: 1,
           echoCancellation: true,
@@ -62,7 +69,7 @@ export function useAudioCapture({ onAudioData }: UseAudioCaptureOptions) {
       });
 
       // Use the native sample rate — don't force 16kHz (Safari produces silence if forced)
-      const audioContext = new AudioContext();
+      audioContext = new AudioContext();
       if (audioContext.state === 'suspended') {
         await audioContext.resume();
       }
@@ -88,9 +95,18 @@ export function useAudioCapture({ onAudioData }: UseAudioCaptureOptions) {
       processorRef.current = processor;
       setIsCapturing(true);
     } catch (error) {
+      // Clean up resources that were created before the error
+      if (audioContext) {
+        audioContext.close().catch(() => {});
+      }
+      if (stream) {
+        stream.getTracks().forEach((t) => t.stop());
+      }
       console.error('Failed to start audio capture:', error);
       setIsSupported(false);
       throw error;
+    } finally {
+      isStartingRef.current = false;
     }
   }, []);
 
