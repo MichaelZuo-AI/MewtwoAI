@@ -961,6 +961,58 @@ describe('useGeminiLive', () => {
       expect(body.isBedtime).toBe(false);
     });
 
+    it('sends isBedtime=true during early morning KST (3:00 AM)', async () => {
+      jest.setSystemTime(new Date('2024-12-31T18:00:00Z')); // KST 03:00
+
+      const { result } = renderHook(() => useGeminiLive(mewtwo));
+
+      await act(async () => {
+        await result.current.connect();
+      });
+
+      const body = JSON.parse(mockFetch.mock.calls[0][1].body);
+      expect(body.isBedtime).toBe(true);
+    });
+
+    it('sends isBedtime=true at KST 7:29 AM (just before bedtime ends)', async () => {
+      jest.setSystemTime(new Date('2024-12-31T22:29:00Z')); // KST 07:29
+
+      const { result } = renderHook(() => useGeminiLive(mewtwo));
+
+      await act(async () => {
+        await result.current.connect();
+      });
+
+      const body = JSON.parse(mockFetch.mock.calls[0][1].body);
+      expect(body.isBedtime).toBe(true);
+    });
+
+    it('sends isBedtime=false at KST 7:30 AM (bedtime ends)', async () => {
+      jest.setSystemTime(new Date('2024-12-31T22:30:00Z')); // KST 07:30
+
+      const { result } = renderHook(() => useGeminiLive(mewtwo));
+
+      await act(async () => {
+        await result.current.connect();
+      });
+
+      const body = JSON.parse(mockFetch.mock.calls[0][1].body);
+      expect(body.isBedtime).toBe(false);
+    });
+
+    it('sends isBedtime=true at midnight KST', async () => {
+      jest.setSystemTime(new Date('2024-12-31T15:00:00Z')); // KST 00:00
+
+      const { result } = renderHook(() => useGeminiLive(mewtwo));
+
+      await act(async () => {
+        await result.current.connect();
+      });
+
+      const body = JSON.parse(mockFetch.mock.calls[0][1].body);
+      expect(body.isBedtime).toBe(true);
+    });
+
     it('passes isBedtime to systemInstruction via getSystemPrompt', async () => {
       jest.setSystemTime(new Date('2025-01-01T12:00:00Z')); // KST 21:00
 
