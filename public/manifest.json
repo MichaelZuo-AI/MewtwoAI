@@ -1,11 +1,11 @@
 {
-  "name": "Mewtwo AI - Talk with Mewtwo",
-  "short_name": "Mewtwo AI",
-  "description": "Interactive voice chat with Mewtwo, your legendary Pokémon friend",
+  "name": "AI Dream Buddies - Talk with your favorite characters",
+  "short_name": "Dream Buddies",
+  "description": "Interactive voice chat with Mewtwo, Kirby, and more — helping kids learn English through fun conversations",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#1a0533",
-  "theme_color": "#A040A0",
+  "background_color": "#111827",
+  "theme_color": "#111827",
   "orientation": "portrait",
   "icons": [
     {
