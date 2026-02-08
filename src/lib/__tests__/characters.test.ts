@@ -1,6 +1,8 @@
 import { getCharacter, getAllCharacters, getNextCharacter, getPreviousCharacter, CHARACTERS } from '../characters';
 import { mewtwo } from '../characters/mewtwo';
 import { kirby } from '../characters/kirby';
+import { dragonite } from '../characters/dragonite';
+import { magolor } from '../characters/magolor';
 
 describe('character registry', () => {
   describe('CHARACTERS', () => {
@@ -12,8 +14,16 @@ describe('character registry', () => {
       expect(CHARACTERS.kirby).toBeDefined();
     });
 
-    it('should have at least 2 characters', () => {
-      expect(Object.keys(CHARACTERS).length).toBeGreaterThanOrEqual(2);
+    it('should contain dragonite', () => {
+      expect(CHARACTERS.dragonite).toBeDefined();
+    });
+
+    it('should contain magolor', () => {
+      expect(CHARACTERS.magolor).toBeDefined();
+    });
+
+    it('should have at least 4 characters', () => {
+      expect(Object.keys(CHARACTERS).length).toBeGreaterThanOrEqual(4);
     });
   });
 
@@ -24,6 +34,14 @@ describe('character registry', () => {
 
     it('returns kirby config for "kirby"', () => {
       expect(getCharacter('kirby')).toBe(kirby);
+    });
+
+    it('returns dragonite config for "dragonite"', () => {
+      expect(getCharacter('dragonite')).toBe(dragonite);
+    });
+
+    it('returns magolor config for "magolor"', () => {
+      expect(getCharacter('magolor')).toBe(magolor);
     });
 
     it('returns undefined for unknown id', () => {
@@ -40,8 +58,16 @@ describe('character registry', () => {
       expect(getNextCharacter('mewtwo').id).toBe('kirby');
     });
 
-    it('wraps around: returns mewtwo after kirby', () => {
-      expect(getNextCharacter('kirby').id).toBe('mewtwo');
+    it('returns dragonite after kirby', () => {
+      expect(getNextCharacter('kirby').id).toBe('dragonite');
+    });
+
+    it('returns magolor after dragonite', () => {
+      expect(getNextCharacter('dragonite').id).toBe('magolor');
+    });
+
+    it('wraps around: returns mewtwo after magolor', () => {
+      expect(getNextCharacter('magolor').id).toBe('mewtwo');
     });
 
     it('returns a valid CharacterConfig', () => {
@@ -57,8 +83,16 @@ describe('character registry', () => {
       expect(getPreviousCharacter('kirby').id).toBe('mewtwo');
     });
 
-    it('wraps around: returns kirby before mewtwo', () => {
-      expect(getPreviousCharacter('mewtwo').id).toBe('kirby');
+    it('returns kirby before dragonite', () => {
+      expect(getPreviousCharacter('dragonite').id).toBe('kirby');
+    });
+
+    it('returns dragonite before magolor', () => {
+      expect(getPreviousCharacter('magolor').id).toBe('dragonite');
+    });
+
+    it('wraps around: returns magolor before mewtwo', () => {
+      expect(getPreviousCharacter('mewtwo').id).toBe('magolor');
     });
 
     it('returns a valid CharacterConfig', () => {
@@ -74,15 +108,17 @@ describe('character registry', () => {
       expect(Array.isArray(getAllCharacters())).toBe(true);
     });
 
-    it('returns at least 2 characters', () => {
-      expect(getAllCharacters().length).toBeGreaterThanOrEqual(2);
+    it('returns at least 4 characters', () => {
+      expect(getAllCharacters().length).toBeGreaterThanOrEqual(4);
     });
 
-    it('includes mewtwo and kirby', () => {
+    it('includes all characters', () => {
       const chars = getAllCharacters();
       const ids = chars.map(c => c.id);
       expect(ids).toContain('mewtwo');
       expect(ids).toContain('kirby');
+      expect(ids).toContain('dragonite');
+      expect(ids).toContain('magolor');
     });
   });
 });
@@ -343,6 +379,233 @@ describe('kirby config', () => {
     it('specifies age-appropriate communication', () => {
       expect(prompt).toContain('5-year-old');
       expect(prompt).toContain('2-4 sentences');
+    });
+
+    it('includes parental goals', () => {
+      expect(prompt).toContain('BRAVERY');
+      expect(prompt).toContain('LEARNING');
+      expect(prompt).toContain('SPORTS');
+    });
+
+    it('enforces never breaking character', () => {
+      expect(prompt).toContain('NEVER break character');
+      expect(prompt).toContain('NEVER say "I\'m an AI"');
+    });
+
+    it('does not contain profanity or inappropriate content', () => {
+      const inappropriateWords = ['damn', 'hell', 'stupid', 'hate'];
+      inappropriateWords.forEach(word => {
+        expect(prompt.toLowerCase()).not.toContain(word);
+      });
+    });
+  });
+});
+
+describe('dragonite config', () => {
+  it('has correct id', () => {
+    expect(dragonite.id).toBe('dragonite');
+  });
+
+  it('has correct name', () => {
+    expect(dragonite.name).toBe('Dragonite');
+  });
+
+  it('has image path', () => {
+    expect(dragonite.image).toContain('/dragonite/dragonite');
+  });
+
+  it('uses Aoede voice', () => {
+    expect(dragonite.voice).toBe('Aoede');
+  });
+
+  it('has theme with warm orange colors', () => {
+    expect(dragonite.theme.bgDeep).toBe('#1a0d05');
+    expect(dragonite.theme.bgMid).toBe('#2e1a0a');
+    expect(dragonite.theme.accent).toBe('#fb923c');
+  });
+
+  it('has aura colors for all voice states', () => {
+    expect(dragonite.theme.aura.idle).toBeDefined();
+    expect(dragonite.theme.aura.listening).toBeDefined();
+    expect(dragonite.theme.aura.speaking).toBeDefined();
+    expect(dragonite.theme.aura.processing).toBeDefined();
+  });
+
+  it('has ring colors for all voice states', () => {
+    expect(dragonite.theme.ring.idle).toBeDefined();
+    expect(dragonite.theme.ring.listening).toBeDefined();
+    expect(dragonite.theme.ring.speaking).toBeDefined();
+    expect(dragonite.theme.ring.processing).toBeDefined();
+  });
+
+  it('has orange micGradient', () => {
+    expect(dragonite.theme.micGradient).toContain('orange');
+  });
+
+  describe('getSystemPrompt', () => {
+    it('returns normal prompt when not story mode', () => {
+      const prompt = dragonite.getSystemPrompt(false);
+      expect(prompt).toContain('Dragonite');
+      expect(prompt).toContain('Dragon');
+      expect(prompt).not.toContain('bedtime story');
+    });
+
+    it('includes story prompt in story mode', () => {
+      const prompt = dragonite.getSystemPrompt(true);
+      expect(prompt).toContain('Dragonite');
+      expect(prompt).toContain('bedtime story');
+    });
+
+    it('always returns a non-empty string', () => {
+      expect(typeof dragonite.getSystemPrompt(false)).toBe('string');
+      expect(dragonite.getSystemPrompt(false).length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('prompt content', () => {
+    const prompt = dragonite.getSystemPrompt(false);
+
+    it('establishes Dragonite identity with Pokemon lore', () => {
+      expect(prompt).toContain('Dragonite');
+      expect(prompt).toContain('Dragon');
+      expect(prompt).toContain('149');
+    });
+
+    it('includes key character traits', () => {
+      expect(prompt).toContain('fly');
+      expect(prompt).toContain('gentle');
+      expect(prompt).toContain('mail');
+    });
+
+    it('includes Pokemon world knowledge', () => {
+      expect(prompt).toContain('Lance');
+      expect(prompt).toContain('Hyper Beam');
+      expect(prompt).toContain('Dratini');
+    });
+
+    it('mentions Damian', () => {
+      expect(prompt).toContain('Damian');
+    });
+
+    it('specifies age-appropriate communication', () => {
+      expect(prompt).toContain('5-year-old');
+      expect(prompt).toContain('2-4 sentences');
+    });
+
+    it('includes parental goals', () => {
+      expect(prompt).toContain('BRAVERY');
+      expect(prompt).toContain('LEARNING');
+      expect(prompt).toContain('SPORTS');
+    });
+
+    it('enforces never breaking character', () => {
+      expect(prompt).toContain('NEVER break character');
+      expect(prompt).toContain('NEVER say "I\'m an AI"');
+    });
+
+    it('does not contain profanity or inappropriate content', () => {
+      const inappropriateWords = ['damn', 'hell', 'stupid', 'hate'];
+      inappropriateWords.forEach(word => {
+        expect(prompt.toLowerCase()).not.toContain(word);
+      });
+    });
+  });
+});
+
+describe('magolor config', () => {
+  it('has correct id', () => {
+    expect(magolor.id).toBe('magolor');
+  });
+
+  it('has correct name', () => {
+    expect(magolor.name).toBe('Magolor');
+  });
+
+  it('has image path', () => {
+    expect(magolor.image).toContain('/magolor/magolor');
+  });
+
+  it('uses Kore voice', () => {
+    expect(magolor.voice).toBe('Kore');
+  });
+
+  it('has theme with deep blue-violet colors', () => {
+    expect(magolor.theme.bgDeep).toBe('#0a0520');
+    expect(magolor.theme.bgMid).toBe('#1a1035');
+    expect(magolor.theme.accent).toBe('#818cf8');
+  });
+
+  it('has aura colors for all voice states', () => {
+    expect(magolor.theme.aura.idle).toBeDefined();
+    expect(magolor.theme.aura.listening).toBeDefined();
+    expect(magolor.theme.aura.speaking).toBeDefined();
+    expect(magolor.theme.aura.processing).toBeDefined();
+  });
+
+  it('has ring colors for all voice states', () => {
+    expect(magolor.theme.ring.idle).toBeDefined();
+    expect(magolor.theme.ring.listening).toBeDefined();
+    expect(magolor.theme.ring.speaking).toBeDefined();
+    expect(magolor.theme.ring.processing).toBeDefined();
+  });
+
+  it('has indigo micGradient', () => {
+    expect(magolor.theme.micGradient).toContain('indigo');
+  });
+
+  describe('getSystemPrompt', () => {
+    it('returns normal prompt when not story mode', () => {
+      const prompt = magolor.getSystemPrompt(false);
+      expect(prompt).toContain('Magolor');
+      expect(prompt).toContain('Another Dimension');
+      expect(prompt).not.toContain('bedtime story');
+    });
+
+    it('includes story prompt in story mode', () => {
+      const prompt = magolor.getSystemPrompt(true);
+      expect(prompt).toContain('Magolor');
+      expect(prompt).toContain('bedtime story');
+    });
+
+    it('always returns a non-empty string', () => {
+      expect(typeof magolor.getSystemPrompt(false)).toBe('string');
+      expect(magolor.getSystemPrompt(false).length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('prompt content', () => {
+    const prompt = magolor.getSystemPrompt(false);
+
+    it('establishes Magolor identity with Kirby lore', () => {
+      expect(prompt).toContain('Magolor');
+      expect(prompt).toContain('Another Dimension');
+      expect(prompt).toContain('Lor Starcutter');
+    });
+
+    it('includes reformed trickster backstory', () => {
+      expect(prompt).toContain('Master Crown');
+      expect(prompt).toContain('tricked');
+      expect(prompt).toContain('friend');
+    });
+
+    it('includes Kirby world knowledge', () => {
+      expect(prompt).toContain('Kirby');
+      expect(prompt).toContain('King Dedede');
+      expect(prompt).toContain('Meta Knight');
+    });
+
+    it('mentions Damian', () => {
+      expect(prompt).toContain('Damian');
+    });
+
+    it('specifies age-appropriate communication', () => {
+      expect(prompt).toContain('5-year-old');
+      expect(prompt).toContain('2-4 sentences');
+    });
+
+    it('includes magic sounds', () => {
+      expect(prompt).toContain('POOF!');
+      expect(prompt).toContain('TA-DA!');
     });
 
     it('includes parental goals', () => {

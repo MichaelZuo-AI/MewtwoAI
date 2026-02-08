@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <!-- Magolor placeholder - replace with official artwork -->
+  <!-- Cloak body -->
+  <ellipse cx="200" cy="240" rx="120" ry="130" fill="#3B47C8"/>
+  <!-- Cloak bottom trim -->
+  <ellipse cx="200" cy="340" rx="100" ry="30" fill="#2A35A0"/>
+  <!-- Inner cloak -->
+  <ellipse cx="200" cy="230" rx="85" ry="90" fill="#1A1A50"/>
+  <!-- Face (dark opening in hood) -->
+  <ellipse cx="200" cy="170" rx="75" ry="60" fill="#0A0A30"/>
+  <!-- Left eye -->
+  <ellipse cx="170" cy="170" rx="22" ry="25" fill="#FFD700"/>
+  <ellipse cx="170" cy="170" rx="12" ry="14" fill="#1A1A2E"/>
+  <ellipse cx="167" cy="165" rx="5" ry="6" fill="white"/>
+  <!-- Right eye -->
+  <ellipse cx="230" cy="170" rx="22" ry="25" fill="#FFD700"/>
+  <ellipse cx="230" cy="170" rx="12" ry="14" fill="#1A1A2E"/>
+  <ellipse cx="227" cy="165" rx="5" ry="6" fill="white"/>
+  <!-- Ear/horn left -->
+  <path d="M 110 140 Q 90 80 120 50 Q 130 90 140 130" fill="#3B47C8"/>
+  <path d="M 115 130 Q 100 85 122 58" stroke="#FFD700" stroke-width="3" fill="none"/>
+  <!-- Ear/horn right -->
+  <path d="M 290 140 Q 310 80 280 50 Q 270 90 260 130" fill="#3B47C8"/>
+  <path d="M 285 130 Q 300 85 278 58" stroke="#FFD700" stroke-width="3" fill="none"/>
+  <!-- Collar gem -->
+  <circle cx="200" cy="220" r="12" fill="#FF4466"/>
+  <circle cx="200" cy="220" r="6" fill="#FF8899"/>
+  <!-- Left hand (floating) -->
+  <ellipse cx="65" cy="250" rx="28" ry="22" fill="#FFE4B5"/>
+  <!-- Right hand (floating) -->
+  <ellipse cx="335" cy="250" rx="28" ry="22" fill="#FFE4B5"/>
+</svg>

@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <!-- Dragonite placeholder - replace with official artwork -->
+  <!-- Body -->
+  <ellipse cx="200" cy="220" rx="130" ry="140" fill="#F9A825"/>
+  <!-- Belly -->
+  <ellipse cx="200" cy="250" rx="90" ry="100" fill="#FFF3D0"/>
+  <!-- Head -->
+  <circle cx="200" cy="120" r="70" fill="#F9A825"/>
+  <!-- Left antenna -->
+  <line x1="165" y1="70" x2="140" y2="25" stroke="#F9A825" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="140" cy="22" r="8" fill="#F9A825"/>
+  <!-- Right antenna -->
+  <line x1="235" y1="70" x2="260" y2="25" stroke="#F9A825" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="260" cy="22" r="8" fill="#F9A825"/>
+  <!-- Left eye -->
+  <ellipse cx="175" cy="115" rx="15" ry="18" fill="#1A1A2E"/>
+  <ellipse cx="172" cy="110" rx="5" ry="6" fill="white"/>
+  <!-- Right eye -->
+  <ellipse cx="225" cy="115" rx="15" ry="18" fill="#1A1A2E"/>
+  <ellipse cx="222" cy="110" rx="5" ry="6" fill="white"/>
+  <!-- Snout -->
+  <ellipse cx="200" cy="140" rx="25" ry="15" fill="#E8962A"/>
+  <!-- Mouth (smile) -->
+  <path d="M 180 150 Q 200 170 220 150" stroke="#C87A20" stroke-width="3" fill="none"/>
+  <!-- Left wing -->
+  <path d="M 80 180 Q 30 120 60 80 L 90 140 Q 50 100 70 70 L 95 130 Z" fill="#58B87A" opacity="0.8"/>
+  <!-- Right wing -->
+  <path d="M 320 180 Q 370 120 340 80 L 310 140 Q 350 100 330 70 L 305 130 Z" fill="#58B87A" opacity="0.8"/>
+  <!-- Left arm -->
+  <ellipse cx="90" cy="240" rx="30" ry="22" fill="#F9A825" transform="rotate(-15 90 240)"/>
+  <!-- Right arm -->
+  <ellipse cx="310" cy="240" rx="30" ry="22" fill="#F9A825" transform="rotate(15 310 240)"/>
+  <!-- Left foot -->
+  <ellipse cx="150" cy="355" rx="40" ry="20" fill="#F9A825"/>
+  <!-- Right foot -->
+  <ellipse cx="250" cy="355" rx="40" ry="20" fill="#F9A825"/>
+</svg>
