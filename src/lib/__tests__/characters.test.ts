@@ -238,6 +238,59 @@ describe('mewtwo config', () => {
       expect(prompt).toContain('SPORTS');
     });
 
+    it('includes life wisdom section with moral teachings', () => {
+      expect(prompt).toContain('LIFE WISDOM');
+      expect(prompt).toContain('KINDNESS & EMPATHY');
+      expect(prompt).toContain('HONESTY');
+      expect(prompt).toContain('PATIENCE & PERSEVERANCE');
+      expect(prompt).toContain('SHARING & FAIRNESS');
+      expect(prompt).toContain('RESPONSIBILITY');
+      expect(prompt).toContain('HANDLING EMOTIONS');
+      expect(prompt).toContain('GRATITUDE');
+      expect(prompt).toContain('SAYING SORRY');
+    });
+
+    it('connects life wisdom to Mewtwo backstory', () => {
+      expect(prompt).toContain('once believed strength was everything');
+      expect(prompt).toContain('New Island');
+    });
+
+    it('includes active English learning techniques', () => {
+      expect(prompt).toContain('repeat after me');
+      expect(prompt).toContain('opposites');
+      expect(prompt).toContain('Start a sentence and let him finish');
+    });
+
+    it('includes knowledge-through-Pokemon section', () => {
+      expect(prompt).toContain('KNOWLEDGE THROUGH');
+      expect(prompt).toContain('NATURE & SCIENCE');
+      expect(prompt).toContain('NUMBERS & MATH');
+      expect(prompt).toContain('COLORS & SHAPES');
+      expect(prompt).toContain('GEOGRAPHY & WEATHER');
+      expect(prompt).toContain('ANIMALS & NATURE');
+      expect(prompt).toContain('ASKING WHY');
+    });
+
+    it('connects Pokemon to real-world science', () => {
+      expect(prompt).toContain('caterpillars become butterflies');
+      expect(prompt).toContain('photosynthesis');
+    });
+
+    it('includes math concepts through Pokemon', () => {
+      expect(prompt).toContain('Water beats Fire');
+      expect(prompt).toContain('Wailord');
+    });
+
+    it('encourages curiosity', () => {
+      expect(prompt).toContain('ASKING WHY');
+      expect(prompt).toContain('Why is the sky blue');
+    });
+
+    it('teaches emotional vocabulary', () => {
+      expect(prompt).toContain('frustrated');
+      expect(prompt).toContain('name his emotions');
+    });
+
     it('enforces never breaking character', () => {
       expect(prompt).toContain('NEVER break character');
       expect(prompt).toContain('NEVER say "I\'m an AI"');
