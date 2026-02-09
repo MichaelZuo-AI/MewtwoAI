@@ -1,7 +1,7 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, act } from '@testing-library/react';
 import CharacterDisplay, { resolveImage } from '../CharacterDisplay';
 import { VoiceState } from '@/types/chat';
-import { CharacterStateImages } from '@/types/character';
+import { CharacterConfig, CharacterStateImages } from '@/types/character';
 import { mewtwo } from '@/lib/characters/mewtwo';
 import { kirby } from '@/lib/characters/kirby';
 
@@ -212,5 +212,67 @@ describe('resolveImage', () => {
     const partial: CharacterStateImages = { idle: '/char/idle.png' };
     expect(resolveImage(partial, 'speaking')).toBe('/char/idle.png');
     expect(resolveImage(partial, 'processing')).toBe('/char/idle.png');
+  });
+});
+
+describe('CharacterDisplay with state-based images', () => {
+  const stateImages: CharacterStateImages = {
+    idle: '/mewtwo/idle.png',
+    listening: '/mewtwo/listen.png',
+    speaking: '/mewtwo/speak.png',
+    processing: '/mewtwo/process.png',
+  };
+
+  const stateImageCharacter: CharacterConfig = {
+    ...mewtwo,
+    image: stateImages,
+  };
+
+  it('renders the idle image initially', () => {
+    render(<CharacterDisplay character={stateImageCharacter} state="idle" />);
+    const img = screen.getByAltText('Mewtwo');
+    expect(img).toHaveAttribute('src', expect.stringContaining('idle.png'));
+  });
+
+  it('preloads all state images on mount', () => {
+    const imageInstances: any[] = [];
+    const OriginalImage = window.Image;
+    (window as any).Image = class {
+      src = '';
+      constructor() {
+        imageInstances.push(this);
+      }
+    };
+
+    render(<CharacterDisplay character={stateImageCharacter} state="idle" />);
+
+    const srcs = imageInstances.map(i => i.src);
+    expect(srcs).toContain('/mewtwo/idle.png');
+    expect(srcs).toContain('/mewtwo/listen.png');
+    expect(srcs).toContain('/mewtwo/speak.png');
+    expect(srcs).toContain('/mewtwo/process.png');
+
+    (window as any).Image = OriginalImage;
+  });
+
+  it('triggers crossfade when state changes to a different image', () => {
+    jest.useFakeTimers();
+
+    const { rerender } = render(
+      <CharacterDisplay character={stateImageCharacter} state="idle" />
+    );
+
+    // Change state to speaking (different image)
+    rerender(<CharacterDisplay character={stateImageCharacter} state="speaking" />);
+
+    // After the crossfade timeout (150ms), the displayed image should update
+    act(() => {
+      jest.advanceTimersByTime(150);
+    });
+
+    const img = screen.getByAltText('Mewtwo');
+    expect(img).toHaveAttribute('src', expect.stringContaining('speak.png'));
+
+    jest.useRealTimers();
   });
 });

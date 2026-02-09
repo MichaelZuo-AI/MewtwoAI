@@ -364,6 +364,18 @@ describe('mewtwo config', () => {
       const prompt = mewtwo.getSystemPrompt(false, true);
       expect(prompt).toContain('legendary');
     });
+
+    it('interpolates kstTimeString into bedtime addendum', () => {
+      const prompt = mewtwo.getSystemPrompt(false, true, '21:30');
+      expect(prompt).toContain('21:30');
+      expect(prompt).toContain('The current time in Korea is 21:30');
+    });
+
+    it('uses fallback text when kstTimeString is not provided', () => {
+      const prompt = mewtwo.getSystemPrompt(false, true);
+      expect(prompt).toContain('It is bedtime hours in Korea');
+      expect(prompt).not.toContain('The current time in Korea is');
+    });
   });
 });
 
@@ -499,6 +511,17 @@ describe('kirby config', () => {
       expect(prompt).toContain('sleepy');
       expect(prompt).toContain('Dream Land');
     });
+
+    it('interpolates kstTimeString into bedtime addendum', () => {
+      const prompt = kirby.getSystemPrompt(false, true, '22:15');
+      expect(prompt).toContain('22:15');
+      expect(prompt).toContain('The current time in Korea is 22:15');
+    });
+
+    it('uses fallback text when kstTimeString is not provided', () => {
+      const prompt = kirby.getSystemPrompt(false, true);
+      expect(prompt).toContain('It is bedtime hours in Korea');
+    });
   });
 });
 
@@ -628,6 +651,17 @@ describe('dragonite config', () => {
       const prompt = dragonite.getSystemPrompt(false, true);
       expect(prompt).toContain('fly');
       expect(prompt).toContain('sleep');
+    });
+
+    it('interpolates kstTimeString into bedtime addendum', () => {
+      const prompt = dragonite.getSystemPrompt(false, true, '20:45');
+      expect(prompt).toContain('20:45');
+      expect(prompt).toContain('The current time in Korea is 20:45');
+    });
+
+    it('uses fallback text when kstTimeString is not provided', () => {
+      const prompt = dragonite.getSystemPrompt(false, true);
+      expect(prompt).toContain('It is bedtime hours in Korea');
     });
   });
 });
@@ -763,6 +797,17 @@ describe('magolor config', () => {
       const prompt = magolor.getSystemPrompt(false, true);
       expect(prompt).toContain('dream spell');
       expect(prompt).toContain('magic');
+    });
+
+    it('interpolates kstTimeString into bedtime addendum', () => {
+      const prompt = magolor.getSystemPrompt(false, true, '23:00');
+      expect(prompt).toContain('23:00');
+      expect(prompt).toContain('The current time in Korea is 23:00');
+    });
+
+    it('uses fallback text when kstTimeString is not provided', () => {
+      const prompt = magolor.getSystemPrompt(false, true);
+      expect(prompt).toContain('It is bedtime hours in Korea');
     });
   });
 });

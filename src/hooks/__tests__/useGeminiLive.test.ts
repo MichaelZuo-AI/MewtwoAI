@@ -453,6 +453,149 @@ describe('useGeminiLive', () => {
       const { result } = renderHook(() => useGeminiLive(mewtwo));
       expect(result.current.isStoryMode).toBe(false);
     });
+
+    it('disconnects and reconnects when switching story mode while connected', async () => {
+      jest.useFakeTimers();
+
+      const { result } = renderHook(() => useGeminiLive(mewtwo));
+
+      await act(async () => {
+        await result.current.connect();
+      });
+
+      // Trigger onopen to set state to connected
+      act(() => {
+        capturedCallbacks.onopen();
+      });
+
+      expect(result.current.connectionState).toBe('connected');
+
+      // Switch story mode while connected
+      act(() => {
+        result.current.switchStoryMode(true);
+      });
+
+      expect(result.current.isStoryMode).toBe(true);
+
+      // Should have disconnected
+      expect(mockSession.conn.close).toHaveBeenCalled();
+
+      // After the 500ms delay, should reconnect
+      await act(async () => {
+        jest.advanceTimersByTime(500);
+      });
+
+      // Should have attempted a new connection
+      expect(mockFetch).toHaveBeenCalledTimes(2);
+
+      jest.useRealTimers();
+    });
+
+    it('does not reconnect when switching story mode while disconnected', () => {
+      jest.useFakeTimers();
+
+      const { result } = renderHook(() => useGeminiLive(mewtwo));
+
+      mockFetch.mockClear();
+
+      act(() => {
+        result.current.switchStoryMode(true);
+      });
+
+      jest.advanceTimersByTime(1000);
+
+      expect(mockFetch).not.toHaveBeenCalled();
+
+      jest.useRealTimers();
+    });
+  });
+
+  describe('story mode auto-continuation', () => {
+    async function connectWithStoryMode() {
+      const { result } = renderHook(() => useGeminiLive(mewtwo));
+
+      act(() => {
+        result.current.switchStoryMode(true);
+      });
+
+      await act(async () => {
+        await result.current.connect();
+      });
+
+      return { result, callbacks: capturedCallbacks };
+    }
+
+    it('sends continuation prompt on turnComplete in story mode', async () => {
+      const { callbacks } = await connectWithStoryMode();
+
+      act(() => {
+        callbacks.onmessage({
+          serverContent: {
+            outputTranscription: { text: 'Once upon a time there was a little Pokémon...' },
+          },
+        });
+      });
+
+      act(() => {
+        callbacks.onmessage({
+          serverContent: { turnComplete: true },
+        });
+      });
+
+      expect(mockSession.sendClientContent).toHaveBeenCalledWith({
+        turns: [
+          {
+            role: 'user',
+            parts: [{ text: 'Keep going, tell me what happens next!' }],
+          },
+        ],
+        turnComplete: true,
+      });
+    });
+
+    it('does not send continuation if story seems done', async () => {
+      const { callbacks } = await connectWithStoryMode();
+
+      act(() => {
+        callbacks.onmessage({
+          serverContent: {
+            outputTranscription: { text: 'And they lived happily ever after. The End.' },
+          },
+        });
+      });
+
+      act(() => {
+        callbacks.onmessage({
+          serverContent: { turnComplete: true },
+        });
+      });
+
+      expect(mockSession.sendClientContent).not.toHaveBeenCalled();
+    });
+
+    it('does not send continuation when not in story mode', async () => {
+      const { result } = renderHook(() => useGeminiLive(mewtwo));
+
+      await act(async () => {
+        await result.current.connect();
+      });
+
+      act(() => {
+        capturedCallbacks.onmessage({
+          serverContent: {
+            outputTranscription: { text: 'Hello young trainer' },
+          },
+        });
+      });
+
+      act(() => {
+        capturedCallbacks.onmessage({
+          serverContent: { turnComplete: true },
+        });
+      });
+
+      expect(mockSession.sendClientContent).not.toHaveBeenCalled();
+    });
   });
 
   describe('error handling', () => {
