@@ -10,7 +10,7 @@ import CharacterDots from '@/components/CharacterDots';
 
 const SELECTED_CHARACTER_KEY = 'selected-character-id';
 
-function CharacterPreview({ characterId }: { characterId: string }) {
+function CharacterPreview({ characterId, side }: { characterId: string; side: 'left' | 'right' }) {
   const char = getCharacter(characterId);
   if (!char) return null;
 
@@ -18,6 +18,9 @@ function CharacterPreview({ characterId }: { characterId: string }) {
     <div
       className="absolute top-0 w-screen h-[100dvh] flex flex-col items-center justify-center"
       style={{
+        // left side: right edge touches container's left edge
+        // right side: left edge touches container's right edge
+        ...(side === 'left' ? { right: '100%' } : { left: '100%' }),
         background: `linear-gradient(to bottom, ${char.theme.bgDeep}, ${char.theme.bgMid})`,
         paddingTop: 'env(safe-area-inset-top)',
         paddingBottom: 'env(safe-area-inset-bottom)',
@@ -115,21 +118,13 @@ export default function Home() {
       {character ? (
         <div className="relative" style={style} {...handlers}>
           {/* Previous character preview — off-screen left */}
-          {prevChar && (
-            <div className="absolute top-0" style={{ right: '100%' }}>
-              <CharacterPreview characterId={prevChar.id} />
-            </div>
-          )}
+          {prevChar && <CharacterPreview characterId={prevChar.id} side="left" />}
 
           {/* Current character — full VoiceChat */}
           <VoiceChat key={selectedCharacterId} character={character} onBack={handleBack} />
 
           {/* Next character preview — off-screen right */}
-          {nextChar && (
-            <div className="absolute top-0" style={{ left: '100%' }}>
-              <CharacterPreview characterId={nextChar.id} />
-            </div>
-          )}
+          {nextChar && <CharacterPreview characterId={nextChar.id} side="right" />}
         </div>
       ) : (
         <CharacterSelect onSelect={handleSelect} />
