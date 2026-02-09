@@ -2,6 +2,17 @@
 
 All notable changes to MewtwoAI will be documented in this file.
 
+## [0.6.0] - 2026-02-09
+
+### Added
+- **Science & exploration prompts** -- each character inspires real-world curiosity through their unique lens: Mewtwo (DNA, space, physics), Kirby (nature, food science, ecology), Dragonite (geography, weather, oceans, animals), Magolor (engineering, inventions, space)
+- **Values & character education** -- all 4 characters now teach kindness, honesty, sharing, empathy, perseverance, and gratitude through in-character stories. Magolor also teaches saying sorry (fits his redemption arc)
+- **Gaming redirection** -- characters gently steer pure gaming talk toward real-world wonder, outdoor exploration, and hands-on experiments without shaming
+
+### Changed
+- Expanded "YOUR MISSION WITH DAMIAN" section in all 4 character prompts from 3 themes to 5+
+- Each character's science theme is unique to their world and personality
+
 ## [0.5.0] - 2026-02-08
 
 ### Added
