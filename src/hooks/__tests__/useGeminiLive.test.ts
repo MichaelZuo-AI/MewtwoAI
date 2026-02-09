@@ -32,6 +32,8 @@ jest.mock('@/lib/storage', () => ({
     getCurrentConversation: jest.fn(() => null),
     addMessage: jest.fn((msg: any) => ({ ...msg, id: 'msg-' + Date.now() })),
     clearAll: jest.fn(),
+    saveCharacterMemory: jest.fn(),
+    getCharacterMemory: jest.fn(() => []),
   },
 }));
 

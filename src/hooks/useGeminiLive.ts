@@ -140,6 +140,16 @@ export function useGeminiLive(character: CharacterConfig) {
       const kstTimeString = `${hour}:${String(minutes).padStart(2, '0')}`;
 
       // 1. Get ephemeral token from our server
+      // Load previous conversation memory for context
+      const previousMemory = storage.getCharacterMemory(character.id);
+      let memoryContext = '';
+      if (previousMemory.length > 0) {
+        const lines = previousMemory.map(m =>
+          `${m.role === 'user' ? 'Speaker' : character.name}: ${m.content}`
+        ).join('\n');
+        memoryContext = `\n\nPREVIOUS CONVERSATION (from last session — use this to remember context, who was speaking, and what was discussed):\n${lines}`;
+      }
+
       const res = await fetch('/api/gemini-token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -279,7 +289,7 @@ export function useGeminiLive(character: CharacterConfig) {
               prebuiltVoiceConfig: { voiceName: character.voice },
             },
           },
-          systemInstruction: character.getSystemPrompt(isStoryModeRef.current, isBedtime, kstTimeString),
+          systemInstruction: character.getSystemPrompt(isStoryModeRef.current, isBedtime, kstTimeString) + memoryContext,
           realtimeInputConfig: {
             activityHandling: isStoryModeRef.current ? ActivityHandling.NO_INTERRUPTION : ActivityHandling.START_OF_ACTIVITY_INTERRUPTS,
             automaticActivityDetection: {
@@ -349,6 +359,12 @@ export function useGeminiLive(character: CharacterConfig) {
     flushUserTranscript();
     flushAssistantTranscript();
 
+    // Save conversation memory for this character (for next session context)
+    setMessages(current => {
+      storage.saveCharacterMemory(character.id, current);
+      return current;
+    });
+
     stopCapture();
     stopPlayback();
 
@@ -358,7 +374,7 @@ export function useGeminiLive(character: CharacterConfig) {
     }
     setConnectionState('disconnected');
     setError(null);
-  }, [stopCapture, stopPlayback, flushUserTranscript, flushAssistantTranscript]);
+  }, [character.id, stopCapture, stopPlayback, flushUserTranscript, flushAssistantTranscript]);
 
   const clearHistory = useCallback(() => {
     storage.clearAll();

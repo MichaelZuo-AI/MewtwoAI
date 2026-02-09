@@ -2,7 +2,9 @@ import { Conversation, Message } from '@/types/chat';
 
 const STORAGE_KEY = 'mewtwo-conversations';
 const CURRENT_CONVERSATION_KEY = 'mewtwo-current-conversation';
+const CHARACTER_MEMORY_KEY = 'character-memory';
 const MAX_MESSAGES = 100; // Limit stored messages per conversation
+const MAX_MEMORY_MESSAGES = 10; // Last N messages saved per character
 
 export const storage = {
   // Get all conversations
@@ -105,5 +107,28 @@ export const storage = {
     const conversation = storage.getCurrentConversation();
     if (!conversation) return [];
     return conversation.messages.slice(-limit);
+  },
+
+  // Save recent messages as memory for a specific character
+  saveCharacterMemory: (characterId: string, messages: Message[]): void => {
+    if (typeof window === 'undefined') return;
+    try {
+      const memories = JSON.parse(localStorage.getItem(CHARACTER_MEMORY_KEY) || '{}');
+      memories[characterId] = messages.slice(-MAX_MEMORY_MESSAGES);
+      localStorage.setItem(CHARACTER_MEMORY_KEY, JSON.stringify(memories));
+    } catch {
+      // Silently fail on storage errors
+    }
+  },
+
+  // Load previous session messages for a specific character
+  getCharacterMemory: (characterId: string): Message[] => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const memories = JSON.parse(localStorage.getItem(CHARACTER_MEMORY_KEY) || '{}');
+      return memories[characterId] || [];
+    } catch {
+      return [];
+    }
   },
 };
