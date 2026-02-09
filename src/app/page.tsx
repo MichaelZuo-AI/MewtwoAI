@@ -70,7 +70,7 @@ export default function Home() {
   const character = selectedCharacterId ? getCharacter(selectedCharacterId) : null;
 
   return (
-    <main>
+    <main className="bg-gray-950 min-h-[100dvh]">
       {character ? (
         <div
           key={selectedCharacterId}

@@ -154,13 +154,13 @@ button {
 /* ===== Character Slide Transitions ===== */
 
 @keyframes slide-enter-from-left {
-  from { transform: translateX(-100vw); opacity: 0.5; }
-  to { transform: translateX(0); opacity: 1; }
+  from { transform: translateX(-100vw); }
+  to { transform: translateX(0); }
 }
 
 @keyframes slide-enter-from-right {
-  from { transform: translateX(100vw); opacity: 0.5; }
-  to { transform: translateX(0); opacity: 1; }
+  from { transform: translateX(100vw); }
+  to { transform: translateX(0); }
 }
 
 .slide-enter-from-left {
