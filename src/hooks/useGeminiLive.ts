@@ -32,6 +32,9 @@ export function useGeminiLive(character: CharacterConfig) {
   const assistantTranscriptRef = useRef('');
   const isStoryModeRef = useRef(false);
 
+  // Keep messages accessible from event handlers (beforeunload, visibilitychange)
+  const messagesRef = useRef<Message[]>([]);
+
   // Auto-reconnect refs
   const isManualDisconnectRef = useRef(false);
   const reconnectAttemptsRef = useRef(0);
@@ -48,10 +51,14 @@ export function useGeminiLive(character: CharacterConfig) {
   // C1 fix: track switchStoryMode timeout
   const storyModeTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
-  // Keep ref in sync
+  // Keep refs in sync
   useEffect(() => {
     isStoryModeRef.current = isStoryMode;
   }, [isStoryMode]);
+
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
 
   const { isPlaying, enqueueAudio, clearQueue, stopPlayback } = useAudioPlayback();
 
@@ -140,14 +147,17 @@ export function useGeminiLive(character: CharacterConfig) {
       const kstTimeString = `${hour}:${String(minutes).padStart(2, '0')}`;
 
       // 1. Get ephemeral token from our server
-      // Load previous conversation memory for context
-      const previousMemory = storage.getCharacterMemory(character.id);
+      // Load conversation memory: prefer current session (pause/resume), fall back to localStorage (app restart)
+      const currentSessionMessages = messagesRef.current;
+      const previousMemory = currentSessionMessages.length > 0
+        ? currentSessionMessages
+        : storage.getCharacterMemory(character.id);
       let memoryContext = '';
       if (previousMemory.length > 0) {
-        const lines = previousMemory.map(m =>
+        const lines = previousMemory.slice(-10).map(m =>
           `${m.role === 'user' ? 'Speaker' : character.name}: ${m.content}`
         ).join('\n');
-        memoryContext = `\n\nPREVIOUS CONVERSATION (from last session — use this to remember context, who was speaking, and what was discussed):\n${lines}`;
+        memoryContext = `\n\nPREVIOUS CONVERSATION (remember who was speaking and what was discussed — use voice pitch to identify the same speaker):\n${lines}`;
       }
 
       const res = await fetch('/api/gemini-token', {
@@ -359,11 +369,20 @@ export function useGeminiLive(character: CharacterConfig) {
     flushUserTranscript();
     flushAssistantTranscript();
 
-    // Save conversation memory for this character (for next session context)
-    setMessages(current => {
-      storage.saveCharacterMemory(character.id, current);
-      return current;
-    });
+    // Save conversation memory synchronously using ref + any unflushed text
+    // (can't rely on setMessages callback — React batches it, may not execute yet)
+    const memoryToSave = [...messagesRef.current];
+    const pendingUser = userTranscriptRef.current.trim();
+    if (pendingUser) {
+      memoryToSave.push({ id: `pending-u-${Date.now()}`, role: 'user', content: pendingUser, timestamp: Date.now() });
+    }
+    const pendingAssistant = assistantTranscriptRef.current.trim();
+    if (pendingAssistant) {
+      memoryToSave.push({ id: `pending-a-${Date.now()}`, role: 'assistant', content: pendingAssistant, timestamp: Date.now() });
+    }
+    if (memoryToSave.length > 0) {
+      storage.saveCharacterMemory(character.id, memoryToSave);
+    }
 
     stopCapture();
     stopPlayback();
@@ -406,9 +425,51 @@ export function useGeminiLive(character: CharacterConfig) {
     [connectionState, disconnect, connect]
   );
 
+  // Save memory when app is backgrounded or closed
+  useEffect(() => {
+    const saveMemory = () => {
+      const memoryToSave = [...messagesRef.current];
+      const pendingUser = userTranscriptRef.current.trim();
+      if (pendingUser) {
+        memoryToSave.push({ id: `pending-u-${Date.now()}`, role: 'user', content: pendingUser, timestamp: Date.now() });
+      }
+      const pendingAssistant = assistantTranscriptRef.current.trim();
+      if (pendingAssistant) {
+        memoryToSave.push({ id: `pending-a-${Date.now()}`, role: 'assistant', content: pendingAssistant, timestamp: Date.now() });
+      }
+      if (memoryToSave.length > 0) {
+        storage.saveCharacterMemory(character.id, memoryToSave);
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        saveMemory();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('beforeunload', saveMemory);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('beforeunload', saveMemory);
+    };
+  }, [character.id]);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
+      // Save memory before unmount (include any unflushed transcripts)
+      const memoryToSave = [...messagesRef.current];
+      const pu = userTranscriptRef.current.trim();
+      if (pu) memoryToSave.push({ id: `pending-u-${Date.now()}`, role: 'user', content: pu, timestamp: Date.now() });
+      const pa = assistantTranscriptRef.current.trim();
+      if (pa) memoryToSave.push({ id: `pending-a-${Date.now()}`, role: 'assistant', content: pa, timestamp: Date.now() });
+      if (memoryToSave.length > 0) {
+        storage.saveCharacterMemory(character.id, memoryToSave);
+      }
+
       isManualDisconnectRef.current = true;
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
@@ -423,7 +484,7 @@ export function useGeminiLive(character: CharacterConfig) {
         sessionRef.current = null;
       }
     };
-  }, [stopCapture, stopPlayback]);
+  }, [character.id, stopCapture, stopPlayback]);
 
   return {
     voiceState,

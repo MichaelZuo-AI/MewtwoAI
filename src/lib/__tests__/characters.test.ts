@@ -287,24 +287,24 @@ describe('mewtwo config', () => {
   describe('bedtime prompt', () => {
     it('appends bedtime addendum when isBedtime is true', () => {
       const prompt = mewtwo.getSystemPrompt(false, true);
-      expect(prompt).toContain('BEDTIME MODE');
+      expect(prompt).toContain('BEDTIME NOTICE');
       expect(prompt).toContain('8:30 PM');
     });
 
     it('does not include bedtime addendum when isBedtime is false', () => {
       const prompt = mewtwo.getSystemPrompt(false, false);
-      expect(prompt).not.toContain('BEDTIME MODE');
+      expect(prompt).not.toContain('BEDTIME NOTICE');
     });
 
     it('does not include bedtime addendum when isBedtime is undefined', () => {
       const prompt = mewtwo.getSystemPrompt(false);
-      expect(prompt).not.toContain('BEDTIME MODE');
+      expect(prompt).not.toContain('BEDTIME NOTICE');
     });
 
     it('includes bedtime addendum with story mode', () => {
       const prompt = mewtwo.getSystemPrompt(true, true);
       expect(prompt).toContain('bedtime story');
-      expect(prompt).toContain('BEDTIME MODE');
+      expect(prompt).toContain('BEDTIME NOTICE');
     });
 
     it('has in-character bedtime language', () => {
@@ -432,13 +432,13 @@ describe('kirby config', () => {
   describe('bedtime prompt', () => {
     it('appends bedtime addendum when isBedtime is true', () => {
       const prompt = kirby.getSystemPrompt(false, true);
-      expect(prompt).toContain('BEDTIME MODE');
+      expect(prompt).toContain('BEDTIME NOTICE');
       expect(prompt).toContain('8:30 PM');
     });
 
     it('does not include bedtime addendum when isBedtime is false', () => {
       const prompt = kirby.getSystemPrompt(false, false);
-      expect(prompt).not.toContain('BEDTIME MODE');
+      expect(prompt).not.toContain('BEDTIME NOTICE');
     });
 
     it('has in-character bedtime language', () => {
@@ -562,13 +562,13 @@ describe('dragonite config', () => {
   describe('bedtime prompt', () => {
     it('appends bedtime addendum when isBedtime is true', () => {
       const prompt = dragonite.getSystemPrompt(false, true);
-      expect(prompt).toContain('BEDTIME MODE');
+      expect(prompt).toContain('BEDTIME NOTICE');
       expect(prompt).toContain('8:30 PM');
     });
 
     it('does not include bedtime addendum when isBedtime is false', () => {
       const prompt = dragonite.getSystemPrompt(false, false);
-      expect(prompt).not.toContain('BEDTIME MODE');
+      expect(prompt).not.toContain('BEDTIME NOTICE');
     });
 
     it('has in-character bedtime language', () => {
@@ -697,13 +697,13 @@ describe('magolor config', () => {
   describe('bedtime prompt', () => {
     it('appends bedtime addendum when isBedtime is true', () => {
       const prompt = magolor.getSystemPrompt(false, true);
-      expect(prompt).toContain('BEDTIME MODE');
+      expect(prompt).toContain('BEDTIME NOTICE');
       expect(prompt).toContain('8:30 PM');
     });
 
     it('does not include bedtime addendum when isBedtime is false', () => {
       const prompt = magolor.getSystemPrompt(false, false);
-      expect(prompt).not.toContain('BEDTIME MODE');
+      expect(prompt).not.toContain('BEDTIME NOTICE');
     });
 
     it('has in-character bedtime language', () => {

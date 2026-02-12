@@ -1025,7 +1025,7 @@ describe('useGeminiLive', () => {
       });
 
       const config = mockConnect.mock.calls[0][0].config;
-      expect(config.systemInstruction).toContain('BEDTIME MODE');
+      expect(config.systemInstruction).toContain('BEDTIME NOTICE');
     });
 
     it('does not include bedtime in systemInstruction during KST daytime', async () => {
@@ -1038,7 +1038,7 @@ describe('useGeminiLive', () => {
       });
 
       const config = mockConnect.mock.calls[0][0].config;
-      expect(config.systemInstruction).not.toContain('BEDTIME MODE');
+      expect(config.systemInstruction).not.toContain('BEDTIME NOTICE');
     });
   });
 });

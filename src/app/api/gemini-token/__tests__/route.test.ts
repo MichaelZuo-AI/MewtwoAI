@@ -111,7 +111,7 @@ describe('/api/gemini-token', () => {
     await POST(makeRequest({ characterId: 'mewtwo', isBedtime: true }));
     const callArg = mockCreate.mock.calls[0][0];
     const sysInstruction = callArg.config.liveConnectConstraints.config.systemInstruction;
-    expect(sysInstruction).toContain('BEDTIME MODE');
+    expect(sysInstruction).toContain('BEDTIME NOTICE');
   });
 
   it('does not include bedtime addendum when isBedtime is false', async () => {
@@ -119,7 +119,7 @@ describe('/api/gemini-token', () => {
     await POST(makeRequest({ characterId: 'mewtwo', isBedtime: false }));
     const callArg = mockCreate.mock.calls[0][0];
     const sysInstruction = callArg.config.liveConnectConstraints.config.systemInstruction;
-    expect(sysInstruction).not.toContain('BEDTIME MODE');
+    expect(sysInstruction).not.toContain('BEDTIME NOTICE');
   });
 
   it('defaults isBedtime to false when not provided', async () => {
@@ -127,7 +127,7 @@ describe('/api/gemini-token', () => {
     await POST(makeRequest({ characterId: 'mewtwo' }));
     const callArg = mockCreate.mock.calls[0][0];
     const sysInstruction = callArg.config.liveConnectConstraints.config.systemInstruction;
-    expect(sysInstruction).not.toContain('BEDTIME MODE');
+    expect(sysInstruction).not.toContain('BEDTIME NOTICE');
   });
 
   it('combines story mode and bedtime', async () => {
@@ -136,7 +136,7 @@ describe('/api/gemini-token', () => {
     const callArg = mockCreate.mock.calls[0][0];
     const sysInstruction = callArg.config.liveConnectConstraints.config.systemInstruction;
     expect(sysInstruction).toContain('bedtime story');
-    expect(sysInstruction).toContain('BEDTIME MODE');
+    expect(sysInstruction).toContain('BEDTIME NOTICE');
   });
 
   it('returns 500 when token creation fails', async () => {
