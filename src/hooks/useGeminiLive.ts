@@ -51,6 +51,9 @@ export function useGeminiLive(character: CharacterConfig) {
   // C1 fix: track switchStoryMode timeout
   const storyModeTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
+  // Track turn count for periodic transcript checkpoints
+  const turnCountRef = useRef(0);
+
   // Keep refs in sync
   useEffect(() => {
     isStoryModeRef.current = isStoryMode;
@@ -59,6 +62,19 @@ export function useGeminiLive(character: CharacterConfig) {
   useEffect(() => {
     messagesRef.current = messages;
   }, [messages]);
+
+  // Helper: build transcript string from current messages + unflushed text
+  const buildCurrentTranscript = useCallback(() => {
+    const allMessages = [...messagesRef.current];
+    const pu = userTranscriptRef.current.trim();
+    if (pu) allMessages.push({ id: 'tmp', role: 'user', content: pu, timestamp: Date.now() });
+    const pa = assistantTranscriptRef.current.trim();
+    if (pa) allMessages.push({ id: 'tmp', role: 'assistant', content: pa, timestamp: Date.now() });
+    if (allMessages.length === 0) return null;
+    return allMessages.map(m =>
+      `${m.role === 'user' ? 'Speaker' : character.name}: ${m.content}`
+    ).join('\n');
+  }, [character.name]);
 
   const { isPlaying, enqueueAudio, clearQueue, stopPlayback } = useAudioPlayback();
 
@@ -134,6 +150,35 @@ export function useGeminiLive(character: CharacterConfig) {
     setConnectionState(isReconnect ? 'reconnecting' : 'connecting');
 
     try {
+      // Recover any orphaned session transcript (from crash/force-kill)
+      const orphanedTranscript = storage.getSessionTranscript();
+      if (orphanedTranscript) {
+        storage.setPendingExtraction(orphanedTranscript);
+        storage.clearSessionTranscript();
+      }
+
+      // Extract pending facts from previous session (lazy extraction)
+      const pendingTranscript = storage.getPendingExtraction();
+      if (pendingTranscript) {
+        try {
+          const existingFacts = storage.getCharacterFacts();
+          const extractRes = await fetch('/api/extract-memories', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ transcript: pendingTranscript, existingFacts }),
+          });
+          if (extractRes.ok) {
+            const { facts } = await extractRes.json();
+            if (Array.isArray(facts)) {
+              storage.saveCharacterFacts(facts);
+            }
+            storage.clearPendingExtraction();
+          }
+        } catch {
+          // Extraction failed — pending transcript stays for next attempt
+        }
+      }
+
       // Compute bedtime in Korean time (KST, UTC+9) — 8:30 PM to 7:30 AM
       const kstParts = new Intl.DateTimeFormat('en-US', {
         timeZone: 'Asia/Seoul',
@@ -145,6 +190,13 @@ export function useGeminiLive(character: CharacterConfig) {
       const minutes = parseInt(kstParts.find(p => p.type === 'minute')!.value, 10);
       const isBedtime = hour > 20 || (hour === 20 && minutes >= 30) || hour < 7 || (hour === 7 && minutes < 30);
       const kstTimeString = `${hour}:${String(minutes).padStart(2, '0')}`;
+
+      // Load accumulated facts about Damian and family
+      const characterFacts = storage.getCharacterFacts();
+      let factsContext = '';
+      if (characterFacts.length > 0) {
+        factsContext = `\n\nTHINGS YOU REMEMBER ABOUT DAMIAN AND HIS FAMILY (use these naturally in conversation — don't list them, just know them):\n${characterFacts.map(f => `- ${f}`).join('\n')}`;
+      }
 
       // 1. Get ephemeral token from our server
       // Load conversation memory: prefer current session (pause/resume), fall back to localStorage (app restart)
@@ -231,6 +283,15 @@ export function useGeminiLive(character: CharacterConfig) {
               flushUserTranscript();
               flushAssistantTranscript();
 
+              // Periodic checkpoint: save session transcript every 5 turns (crash safety net)
+              turnCountRef.current++;
+              if (turnCountRef.current % 5 === 0) {
+                const transcript = buildCurrentTranscript();
+                if (transcript) {
+                  storage.setSessionTranscript(transcript);
+                }
+              }
+
               // Story mode auto-continue: the model hits its turn length limit
               // mid-story, so we send a continuation prompt to keep it going
               if (
@@ -270,6 +331,14 @@ export function useGeminiLive(character: CharacterConfig) {
             // I1 fix: clear stale audio from old session
             clearQueue();
 
+            // Save session transcript checkpoint before flushing (for unexpected drops)
+            if (!isManualDisconnectRef.current) {
+              const transcript = buildCurrentTranscript();
+              if (transcript) {
+                storage.setSessionTranscript(transcript);
+              }
+            }
+
             // I2 fix: flush pending transcripts before reconnecting
             flushUserTranscript();
             flushAssistantTranscript();
@@ -299,7 +368,7 @@ export function useGeminiLive(character: CharacterConfig) {
               prebuiltVoiceConfig: { voiceName: character.voice },
             },
           },
-          systemInstruction: character.getSystemPrompt(isStoryModeRef.current, isBedtime, kstTimeString) + memoryContext,
+          systemInstruction: character.getSystemPrompt(isStoryModeRef.current, isBedtime, kstTimeString) + factsContext + memoryContext,
           realtimeInputConfig: {
             activityHandling: isStoryModeRef.current ? ActivityHandling.NO_INTERRUPTION : ActivityHandling.START_OF_ACTIVITY_INTERRUPTS,
             automaticActivityDetection: {
@@ -343,6 +412,7 @@ export function useGeminiLive(character: CharacterConfig) {
     clearQueue,
     flushUserTranscript,
     flushAssistantTranscript,
+    buildCurrentTranscript,
   ]);
 
   // Keep connect ref in sync for reconnection callbacks
@@ -382,7 +452,16 @@ export function useGeminiLive(character: CharacterConfig) {
     }
     if (memoryToSave.length > 0) {
       storage.saveCharacterMemory(character.id, memoryToSave);
+      // Save transcript for lazy fact extraction on next connect
+      const transcript = memoryToSave.map(m =>
+        `${m.role === 'user' ? 'Speaker' : character.name}: ${m.content}`
+      ).join('\n');
+      storage.setPendingExtraction(transcript);
     }
+
+    // Clear session checkpoint — full transcript is now in pending-extraction
+    storage.clearSessionTranscript();
+    turnCountRef.current = 0;
 
     stopCapture();
     stopPlayback();
@@ -439,6 +518,11 @@ export function useGeminiLive(character: CharacterConfig) {
       }
       if (memoryToSave.length > 0) {
         storage.saveCharacterMemory(character.id, memoryToSave);
+        // Save transcript for lazy fact extraction on next connect
+        const transcript = memoryToSave.map(m =>
+          `${m.role === 'user' ? 'Speaker' : character.name}: ${m.content}`
+        ).join('\n');
+        storage.setPendingExtraction(transcript);
       }
     };
 
@@ -468,6 +552,11 @@ export function useGeminiLive(character: CharacterConfig) {
       if (pa) memoryToSave.push({ id: `pending-a-${Date.now()}`, role: 'assistant', content: pa, timestamp: Date.now() });
       if (memoryToSave.length > 0) {
         storage.saveCharacterMemory(character.id, memoryToSave);
+        // Save transcript for lazy fact extraction on next connect
+        const transcript = memoryToSave.map(m =>
+          `${m.role === 'user' ? 'Speaker' : character.name}: ${m.content}`
+        ).join('\n');
+        storage.setPendingExtraction(transcript);
       }
 
       isManualDisconnectRef.current = true;

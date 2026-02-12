@@ -34,6 +34,15 @@ jest.mock('@/lib/storage', () => ({
     clearAll: jest.fn(),
     saveCharacterMemory: jest.fn(),
     getCharacterMemory: jest.fn(() => []),
+    getCharacterFacts: jest.fn(() => []),
+    saveCharacterFacts: jest.fn(),
+    clearCharacterFacts: jest.fn(),
+    getPendingExtraction: jest.fn(() => null),
+    setPendingExtraction: jest.fn(),
+    clearPendingExtraction: jest.fn(),
+    getSessionTranscript: jest.fn(() => null),
+    setSessionTranscript: jest.fn(),
+    clearSessionTranscript: jest.fn(),
   },
 }));
 

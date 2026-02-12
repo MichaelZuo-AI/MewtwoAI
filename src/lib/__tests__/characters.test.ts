@@ -123,6 +123,35 @@ describe('character registry', () => {
   });
 });
 
+describe('character memory instructions', () => {
+  it('mewtwo prompt includes memory instruction', () => {
+    const prompt = mewtwo.getSystemPrompt(false);
+    expect(prompt).toContain('psychic memory');
+  });
+
+  it('kirby prompt includes memory instruction', () => {
+    const prompt = kirby.getSystemPrompt(false);
+    expect(prompt).toContain('Dream Land memory');
+  });
+
+  it('dragonite prompt includes memory instruction', () => {
+    const prompt = dragonite.getSystemPrompt(false);
+    expect(prompt).toContain('Dragonite heart');
+  });
+
+  it('magolor prompt includes memory instruction', () => {
+    const prompt = magolor.getSystemPrompt(false);
+    expect(prompt).toContain('magical memory');
+  });
+
+  it('all characters mention remembering facts naturally', () => {
+    const allPrompts = [mewtwo, kirby, dragonite, magolor].map(c => c.getSystemPrompt(false));
+    allPrompts.forEach(prompt => {
+      expect(prompt).toContain('naturally');
+    });
+  });
+});
+
 describe('mewtwo config', () => {
   it('has correct id', () => {
     expect(mewtwo.id).toBe('mewtwo');

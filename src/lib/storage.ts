@@ -3,8 +3,12 @@ import { Conversation, Message } from '@/types/chat';
 const STORAGE_KEY = 'mewtwo-conversations';
 const CURRENT_CONVERSATION_KEY = 'mewtwo-current-conversation';
 const CHARACTER_MEMORY_KEY = 'character-memory';
+const CHARACTER_FACTS_KEY = 'character-facts';
+const PENDING_EXTRACTION_KEY = 'pending-extraction';
+const SESSION_TRANSCRIPT_KEY = 'session-transcript';
 const MAX_MESSAGES = 100; // Limit stored messages per conversation
 const MAX_MEMORY_MESSAGES = 10; // Last N messages saved per character
+const MAX_FACTS = 50;
 
 export const storage = {
   // Get all conversations
@@ -96,10 +100,13 @@ export const storage = {
     }
   },
 
-  // Clear all conversations
+  // Clear all conversations and memory
   clearAll: (): void => {
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(CURRENT_CONVERSATION_KEY);
+    localStorage.removeItem(CHARACTER_FACTS_KEY);
+    localStorage.removeItem(PENDING_EXTRACTION_KEY);
+    localStorage.removeItem(SESSION_TRANSCRIPT_KEY);
   },
 
   // Get messages for context (last N messages)
@@ -130,5 +137,78 @@ export const storage = {
     } catch {
       return [];
     }
+  },
+
+  // Get shared character facts (accumulated across sessions)
+  getCharacterFacts: (): string[] => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const data = localStorage.getItem(CHARACTER_FACTS_KEY);
+      return data ? JSON.parse(data) : [];
+    } catch {
+      return [];
+    }
+  },
+
+  // Save shared character facts (capped at MAX_FACTS)
+  saveCharacterFacts: (facts: string[]): void => {
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.setItem(CHARACTER_FACTS_KEY, JSON.stringify(facts.slice(-MAX_FACTS)));
+    } catch {
+      // Silently fail on storage errors
+    }
+  },
+
+  // Clear all character facts
+  clearCharacterFacts: (): void => {
+    if (typeof window === 'undefined') return;
+    localStorage.removeItem(CHARACTER_FACTS_KEY);
+  },
+
+  // Append transcript for pending fact extraction (append, not overwrite — handles rapid character switching)
+  setPendingExtraction: (transcript: string): void => {
+    if (typeof window === 'undefined') return;
+    try {
+      const existing = localStorage.getItem(PENDING_EXTRACTION_KEY) || '';
+      const separator = existing ? '\n---\n' : '';
+      localStorage.setItem(PENDING_EXTRACTION_KEY, existing + separator + transcript);
+    } catch {
+      // Silently fail on storage errors
+    }
+  },
+
+  // Get pending transcript for extraction
+  getPendingExtraction: (): string | null => {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem(PENDING_EXTRACTION_KEY) || null;
+  },
+
+  // Clear pending extraction after successful processing
+  clearPendingExtraction: (): void => {
+    if (typeof window === 'undefined') return;
+    localStorage.removeItem(PENDING_EXTRACTION_KEY);
+  },
+
+  // Save current session transcript checkpoint (overwrite — safety net for crashes)
+  setSessionTranscript: (transcript: string): void => {
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.setItem(SESSION_TRANSCRIPT_KEY, transcript);
+    } catch {
+      // Silently fail on storage errors
+    }
+  },
+
+  // Get session transcript checkpoint
+  getSessionTranscript: (): string | null => {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem(SESSION_TRANSCRIPT_KEY) || null;
+  },
+
+  // Clear session transcript (after moving to pending extraction)
+  clearSessionTranscript: (): void => {
+    if (typeof window === 'undefined') return;
+    localStorage.removeItem(SESSION_TRANSCRIPT_KEY);
   },
 };

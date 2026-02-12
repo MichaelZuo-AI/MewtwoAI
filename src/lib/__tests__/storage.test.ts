@@ -402,6 +402,140 @@ describe('storage', () => {
     })
   })
 
+  describe('character facts', () => {
+    it('should return empty array when no facts exist', () => {
+      expect(storage.getCharacterFacts()).toEqual([])
+    })
+
+    it('should save and retrieve facts', () => {
+      const facts = ['Damian loves skiing', 'Favorite color is blue']
+      storage.saveCharacterFacts(facts)
+      expect(storage.getCharacterFacts()).toEqual(facts)
+    })
+
+    it('should cap facts at 50', () => {
+      const facts = Array.from({ length: 60 }, (_, i) => `Fact ${i}`)
+      storage.saveCharacterFacts(facts)
+      expect(storage.getCharacterFacts()).toHaveLength(50)
+      // Should keep the last 50
+      expect(storage.getCharacterFacts()[0]).toBe('Fact 10')
+    })
+
+    it('should clear facts', () => {
+      storage.saveCharacterFacts(['Damian likes Pikachu'])
+      storage.clearCharacterFacts()
+      expect(storage.getCharacterFacts()).toEqual([])
+    })
+
+    it('should handle corrupted facts data gracefully', () => {
+      localStorage.setItem('character-facts', 'not json')
+      expect(storage.getCharacterFacts()).toEqual([])
+    })
+
+    it('should return empty array in server environment', () => {
+      const originalWindow = global.window
+      // @ts-ignore
+      delete global.window
+      expect(storage.getCharacterFacts()).toEqual([])
+      global.window = originalWindow
+    })
+  })
+
+  describe('pending extraction', () => {
+    it('should return null when no pending extraction exists', () => {
+      expect(storage.getPendingExtraction()).toBeNull()
+    })
+
+    it('should save and retrieve pending extraction', () => {
+      storage.setPendingExtraction('Speaker: Hello')
+      expect(storage.getPendingExtraction()).toBe('Speaker: Hello')
+    })
+
+    it('should append to existing pending extraction', () => {
+      storage.setPendingExtraction('Session 1 transcript')
+      storage.setPendingExtraction('Session 2 transcript')
+      const result = storage.getPendingExtraction()
+      expect(result).toContain('Session 1 transcript')
+      expect(result).toContain('Session 2 transcript')
+      expect(result).toContain('---')
+    })
+
+    it('should clear pending extraction', () => {
+      storage.setPendingExtraction('Some transcript')
+      storage.clearPendingExtraction()
+      expect(storage.getPendingExtraction()).toBeNull()
+    })
+
+    it('should return null in server environment', () => {
+      const originalWindow = global.window
+      // @ts-ignore
+      delete global.window
+      expect(storage.getPendingExtraction()).toBeNull()
+      global.window = originalWindow
+    })
+  })
+
+  describe('session transcript checkpoint', () => {
+    it('should return null when no session transcript exists', () => {
+      expect(storage.getSessionTranscript()).toBeNull()
+    })
+
+    it('should save and retrieve session transcript', () => {
+      storage.setSessionTranscript('Speaker: Hello\nMewtwo: Hi!')
+      expect(storage.getSessionTranscript()).toBe('Speaker: Hello\nMewtwo: Hi!')
+    })
+
+    it('should overwrite (not append) session transcript', () => {
+      storage.setSessionTranscript('First checkpoint')
+      storage.setSessionTranscript('Second checkpoint')
+      expect(storage.getSessionTranscript()).toBe('Second checkpoint')
+    })
+
+    it('should clear session transcript', () => {
+      storage.setSessionTranscript('Some transcript')
+      storage.clearSessionTranscript()
+      expect(storage.getSessionTranscript()).toBeNull()
+    })
+
+    it('should return null in server environment', () => {
+      const originalWindow = global.window
+      // @ts-ignore
+      delete global.window
+      expect(storage.getSessionTranscript()).toBeNull()
+      global.window = originalWindow
+    })
+  })
+
+  describe('clearAll with facts and extraction', () => {
+    it('should clear facts when clearing all', () => {
+      storage.saveCharacterFacts(['Damian likes skiing'])
+      storage.clearAll()
+      expect(storage.getCharacterFacts()).toEqual([])
+    })
+
+    it('should clear pending extraction when clearing all', () => {
+      storage.setPendingExtraction('Some transcript')
+      storage.clearAll()
+      expect(storage.getPendingExtraction()).toBeNull()
+    })
+
+    it('should clear session transcript when clearing all', () => {
+      storage.setSessionTranscript('checkpoint')
+      storage.clearAll()
+      expect(storage.getSessionTranscript()).toBeNull()
+    })
+
+    it('should clear localStorage keys for facts, extraction, and session transcript', () => {
+      storage.saveCharacterFacts(['fact'])
+      storage.setPendingExtraction('transcript')
+      storage.setSessionTranscript('checkpoint')
+      storage.clearAll()
+      expect(localStorage.getItem('character-facts')).toBeNull()
+      expect(localStorage.getItem('pending-extraction')).toBeNull()
+      expect(localStorage.getItem('session-transcript')).toBeNull()
+    })
+  })
+
   describe('edge cases', () => {
     beforeEach(() => {
       jest.useFakeTimers()
