@@ -9,6 +9,7 @@ const SESSION_TRANSCRIPT_KEY = 'session-transcript';
 const MAX_MESSAGES = 100; // Limit stored messages per conversation
 const MAX_MEMORY_MESSAGES = 10; // Last N messages saved per character
 const MAX_FACTS = 50;
+const MAX_PENDING_SIZE = 200000; // ~200KB cap to prevent unbounded growth
 
 export const storage = {
   // Get all conversations
@@ -104,6 +105,7 @@ export const storage = {
   clearAll: (): void => {
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(CURRENT_CONVERSATION_KEY);
+    localStorage.removeItem(CHARACTER_MEMORY_KEY);
     localStorage.removeItem(CHARACTER_FACTS_KEY);
     localStorage.removeItem(PENDING_EXTRACTION_KEY);
     localStorage.removeItem(SESSION_TRANSCRIPT_KEY);
@@ -172,7 +174,12 @@ export const storage = {
     try {
       const existing = localStorage.getItem(PENDING_EXTRACTION_KEY) || '';
       const separator = existing ? '\n---\n' : '';
-      localStorage.setItem(PENDING_EXTRACTION_KEY, existing + separator + transcript);
+      let combined = existing + separator + transcript;
+      // Cap size to prevent unbounded growth if extraction repeatedly fails
+      if (combined.length > MAX_PENDING_SIZE) {
+        combined = combined.slice(-MAX_PENDING_SIZE);
+      }
+      localStorage.setItem(PENDING_EXTRACTION_KEY, combined);
     } catch {
       // Silently fail on storage errors
     }

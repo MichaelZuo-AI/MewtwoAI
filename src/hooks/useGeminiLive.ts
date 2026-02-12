@@ -54,6 +54,9 @@ export function useGeminiLive(character: CharacterConfig) {
   // Track turn count for periodic transcript checkpoints
   const turnCountRef = useRef(0);
 
+  // C2 fix: prevent duplicate transcript saves from overlapping lifecycle events
+  const sessionSavedRef = useRef(false);
+
   // Keep refs in sync
   useEffect(() => {
     isStoryModeRef.current = isStoryMode;
@@ -145,6 +148,7 @@ export function useGeminiLive(character: CharacterConfig) {
       isManualDisconnectRef.current = false;
       reconnectAttemptsRef.current = 0;
       storyContinuationCountRef.current = 0;
+      sessionSavedRef.current = false;
     }
     setError(null);
     setConnectionState(isReconnect ? 'reconnecting' : 'connecting');
@@ -161,12 +165,20 @@ export function useGeminiLive(character: CharacterConfig) {
       const pendingTranscript = storage.getPendingExtraction();
       if (pendingTranscript) {
         try {
+          // I2 fix: timeout prevents extraction from blocking connect indefinitely
+          const abortController = new AbortController();
+          const timeoutId = setTimeout(() => abortController.abort(), 5000);
           const existingFacts = storage.getCharacterFacts();
           const extractRes = await fetch('/api/extract-memories', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json',
+              'X-App-Source': 'ai-dream-buddies',
+            },
             body: JSON.stringify({ transcript: pendingTranscript, existingFacts }),
+            signal: abortController.signal,
           });
+          clearTimeout(timeoutId);
           if (extractRes.ok) {
             const { facts } = await extractRes.json();
             if (Array.isArray(facts)) {
@@ -435,29 +447,31 @@ export function useGeminiLive(character: CharacterConfig) {
       storyModeTimeoutRef.current = undefined;
     }
 
-    // Flush any pending transcripts
+    // I1 fix: build memory BEFORE flushing (flush clears the refs)
+    // C2 fix: skip if already saved by visibilitychange/beforeunload
+    if (!sessionSavedRef.current) {
+      sessionSavedRef.current = true;
+      const memoryToSave = [...messagesRef.current];
+      const pendingUser = userTranscriptRef.current.trim();
+      if (pendingUser) {
+        memoryToSave.push({ id: `pending-u-${Date.now()}`, role: 'user', content: pendingUser, timestamp: Date.now() });
+      }
+      const pendingAssistant = assistantTranscriptRef.current.trim();
+      if (pendingAssistant) {
+        memoryToSave.push({ id: `pending-a-${Date.now()}`, role: 'assistant', content: pendingAssistant, timestamp: Date.now() });
+      }
+      if (memoryToSave.length > 0) {
+        storage.saveCharacterMemory(character.id, memoryToSave);
+        const transcript = memoryToSave.map(m =>
+          `${m.role === 'user' ? 'Speaker' : character.name}: ${m.content}`
+        ).join('\n');
+        storage.setPendingExtraction(transcript);
+      }
+    }
+
+    // Flush pending transcripts to React state (for UI update)
     flushUserTranscript();
     flushAssistantTranscript();
-
-    // Save conversation memory synchronously using ref + any unflushed text
-    // (can't rely on setMessages callback — React batches it, may not execute yet)
-    const memoryToSave = [...messagesRef.current];
-    const pendingUser = userTranscriptRef.current.trim();
-    if (pendingUser) {
-      memoryToSave.push({ id: `pending-u-${Date.now()}`, role: 'user', content: pendingUser, timestamp: Date.now() });
-    }
-    const pendingAssistant = assistantTranscriptRef.current.trim();
-    if (pendingAssistant) {
-      memoryToSave.push({ id: `pending-a-${Date.now()}`, role: 'assistant', content: pendingAssistant, timestamp: Date.now() });
-    }
-    if (memoryToSave.length > 0) {
-      storage.saveCharacterMemory(character.id, memoryToSave);
-      // Save transcript for lazy fact extraction on next connect
-      const transcript = memoryToSave.map(m =>
-        `${m.role === 'user' ? 'Speaker' : character.name}: ${m.content}`
-      ).join('\n');
-      storage.setPendingExtraction(transcript);
-    }
 
     // Clear session checkpoint — full transcript is now in pending-extraction
     storage.clearSessionTranscript();
@@ -507,6 +521,9 @@ export function useGeminiLive(character: CharacterConfig) {
   // Save memory when app is backgrounded or closed
   useEffect(() => {
     const saveMemory = () => {
+      // C2 fix: skip if already saved by disconnect
+      if (sessionSavedRef.current) return;
+      sessionSavedRef.current = true;
       const memoryToSave = [...messagesRef.current];
       const pendingUser = userTranscriptRef.current.trim();
       if (pendingUser) {
@@ -518,7 +535,6 @@ export function useGeminiLive(character: CharacterConfig) {
       }
       if (memoryToSave.length > 0) {
         storage.saveCharacterMemory(character.id, memoryToSave);
-        // Save transcript for lazy fact extraction on next connect
         const transcript = memoryToSave.map(m =>
           `${m.role === 'user' ? 'Speaker' : character.name}: ${m.content}`
         ).join('\n');
@@ -545,18 +561,21 @@ export function useGeminiLive(character: CharacterConfig) {
   useEffect(() => {
     return () => {
       // Save memory before unmount (include any unflushed transcripts)
-      const memoryToSave = [...messagesRef.current];
-      const pu = userTranscriptRef.current.trim();
-      if (pu) memoryToSave.push({ id: `pending-u-${Date.now()}`, role: 'user', content: pu, timestamp: Date.now() });
-      const pa = assistantTranscriptRef.current.trim();
-      if (pa) memoryToSave.push({ id: `pending-a-${Date.now()}`, role: 'assistant', content: pa, timestamp: Date.now() });
-      if (memoryToSave.length > 0) {
-        storage.saveCharacterMemory(character.id, memoryToSave);
-        // Save transcript for lazy fact extraction on next connect
-        const transcript = memoryToSave.map(m =>
-          `${m.role === 'user' ? 'Speaker' : character.name}: ${m.content}`
-        ).join('\n');
-        storage.setPendingExtraction(transcript);
+      // C2 fix: skip if already saved by disconnect/visibility/beforeunload
+      if (!sessionSavedRef.current) {
+        sessionSavedRef.current = true;
+        const memoryToSave = [...messagesRef.current];
+        const pu = userTranscriptRef.current.trim();
+        if (pu) memoryToSave.push({ id: `pending-u-${Date.now()}`, role: 'user', content: pu, timestamp: Date.now() });
+        const pa = assistantTranscriptRef.current.trim();
+        if (pa) memoryToSave.push({ id: `pending-a-${Date.now()}`, role: 'assistant', content: pa, timestamp: Date.now() });
+        if (memoryToSave.length > 0) {
+          storage.saveCharacterMemory(character.id, memoryToSave);
+          const transcript = memoryToSave.map(m =>
+            `${m.role === 'user' ? 'Speaker' : character.name}: ${m.content}`
+          ).join('\n');
+          storage.setPendingExtraction(transcript);
+        }
       }
 
       isManualDisconnectRef.current = true;

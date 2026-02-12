@@ -38,6 +38,14 @@ export async function POST(request: Request) {
     );
   }
 
+  // I3 fix: reject requests without internal app header
+  if (request.headers.get('X-App-Source') !== 'ai-dream-buddies') {
+    return NextResponse.json(
+      { error: 'Unauthorized' },
+      { status: 403 }
+    );
+  }
+
   try {
     const body = await request.json().catch(() => ({}));
     const transcript = body.transcript;
@@ -64,7 +72,11 @@ export async function POST(request: Request) {
       contents: prompt,
     });
 
-    const text = result.text?.trim() || '[]';
+    const text = result.text?.trim() || '';
+    // I5 fix: empty/missing response preserves existing facts
+    if (!text) {
+      return NextResponse.json({ facts: existingFacts });
+    }
     // Extract JSON array from response (handle markdown code blocks)
     const jsonMatch = text.match(/\[[\s\S]*\]/);
     if (!jsonMatch) {

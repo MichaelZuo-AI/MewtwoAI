@@ -12,10 +12,14 @@ jest.mock('@google/genai', () => ({
   })),
 }));
 
-function makeRequest(body: Record<string, unknown> = {}): Request {
+function makeRequest(body: Record<string, unknown> = {}, headers: Record<string, string> = {}): Request {
   return new Request('http://localhost/api/extract-memories', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'X-App-Source': 'ai-dream-buddies',
+      ...headers,
+    },
     body: JSON.stringify(body),
   });
 }
@@ -30,6 +34,28 @@ describe('/api/extract-memories', () => {
 
   afterAll(() => {
     process.env = originalEnv;
+  });
+
+  it('returns 403 when X-App-Source header is missing', async () => {
+    const req = new Request('http://localhost/api/extract-memories', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ transcript: 'hello' }),
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(403);
+    const body = await res.json();
+    expect(body.error).toBe('Unauthorized');
+  });
+
+  it('returns 403 when X-App-Source header is wrong', async () => {
+    const req = new Request('http://localhost/api/extract-memories', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-App-Source': 'wrong-value' },
+      body: JSON.stringify({ transcript: 'hello' }),
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(403);
   });
 
   it('returns 500 when GEMINI_API_KEY is not set', async () => {
@@ -107,6 +133,19 @@ describe('/api/extract-memories', () => {
     expect(body.facts).toEqual(['existing fact']);
   });
 
+  it('returns existing facts when parsed JSON is not an array', async () => {
+    mockGenerateContent.mockResolvedValue({
+      text: '"just a string"',
+    });
+    const res = await POST(makeRequest({
+      transcript: 'Speaker: hello',
+      existingFacts: ['existing fact'],
+    }));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.facts).toEqual(['existing fact']);
+  });
+
   it('caps facts at 50', async () => {
     const manyFacts = Array.from({ length: 60 }, (_, i) => `Fact ${i}`);
     mockGenerateContent.mockResolvedValue({
@@ -143,6 +182,7 @@ describe('/api/extract-memories', () => {
   it('handles malformed request body gracefully', async () => {
     const req = new Request('http://localhost/api/extract-memories', {
       method: 'POST',
+      headers: { 'X-App-Source': 'ai-dream-buddies' },
       body: 'not json',
     });
     const res = await POST(req);
@@ -171,7 +211,7 @@ describe('/api/extract-memories', () => {
     expect(callArg.model).toBe('gemini-2.0-flash');
   });
 
-  it('handles empty text response', async () => {
+  it('preserves existing facts on empty text response', async () => {
     mockGenerateContent.mockResolvedValue({
       text: '',
     });
@@ -181,7 +221,19 @@ describe('/api/extract-memories', () => {
     }));
     expect(res.status).toBe(200);
     const body = await res.json();
-    // Empty text defaults to '[]' which parses to empty array
+    // I5 fix: empty response preserves existing facts instead of wiping them
+    expect(body.facts).toEqual(['old fact']);
+  });
+
+  it('returns empty array on empty text response when no existing facts', async () => {
+    mockGenerateContent.mockResolvedValue({
+      text: '',
+    });
+    const res = await POST(makeRequest({
+      transcript: 'Speaker: hello',
+    }));
+    expect(res.status).toBe(200);
+    const body = await res.json();
     expect(body.facts).toEqual([]);
   });
 });

@@ -152,6 +152,132 @@ describe('character memory instructions', () => {
   });
 });
 
+describe('time-of-day context', () => {
+  describe('mewtwo', () => {
+    it('includes morning context for morning time', () => {
+      const prompt = mewtwo.getSystemPrompt(false, false, '9:00');
+      expect(prompt).toContain('morning');
+      expect(prompt).toContain('9:00');
+    });
+
+    it('includes afternoon context for afternoon time', () => {
+      const prompt = mewtwo.getSystemPrompt(false, false, '14:00');
+      expect(prompt).toContain('afternoon');
+      expect(prompt).toContain('14:00');
+    });
+
+    it('includes evening context for evening time', () => {
+      const prompt = mewtwo.getSystemPrompt(false, false, '18:00');
+      expect(prompt).toContain('evening');
+      expect(prompt).toContain('18:00');
+    });
+
+    it('does NOT include time-of-day context when bedtime is true', () => {
+      const prompt = mewtwo.getSystemPrompt(false, true, '9:00');
+      expect(prompt).toContain('BEDTIME NOTICE');
+      expect(prompt).not.toContain('TIME CONTEXT');
+    });
+
+    it('includes the time string in the output when provided', () => {
+      const prompt = mewtwo.getSystemPrompt(false, false, '10:30');
+      expect(prompt).toContain('10:30');
+    });
+  });
+
+  describe('kirby', () => {
+    it('includes morning context for morning time', () => {
+      const prompt = kirby.getSystemPrompt(false, false, '8:00');
+      expect(prompt).toContain('morning');
+      expect(prompt).toContain('8:00');
+    });
+
+    it('includes afternoon context for afternoon time', () => {
+      const prompt = kirby.getSystemPrompt(false, false, '15:00');
+      expect(prompt).toContain('afternoon');
+      expect(prompt).toContain('15:00');
+    });
+
+    it('includes evening context for evening time', () => {
+      const prompt = kirby.getSystemPrompt(false, false, '19:00');
+      expect(prompt).toContain('evening');
+      expect(prompt).toContain('19:00');
+    });
+
+    it('does NOT include time-of-day context when bedtime is true', () => {
+      const prompt = kirby.getSystemPrompt(false, true, '8:00');
+      expect(prompt).toContain('BEDTIME NOTICE');
+      expect(prompt).not.toContain('TIME CONTEXT');
+    });
+
+    it('includes the time string in the output when provided', () => {
+      const prompt = kirby.getSystemPrompt(false, false, '11:45');
+      expect(prompt).toContain('11:45');
+    });
+  });
+
+  describe('dragonite', () => {
+    it('includes morning context for morning time', () => {
+      const prompt = dragonite.getSystemPrompt(false, false, '7:00');
+      expect(prompt).toContain('morning');
+      expect(prompt).toContain('7:00');
+    });
+
+    it('includes afternoon context for afternoon time', () => {
+      const prompt = dragonite.getSystemPrompt(false, false, '13:00');
+      expect(prompt).toContain('afternoon');
+      expect(prompt).toContain('13:00');
+    });
+
+    it('includes evening context for evening time', () => {
+      const prompt = dragonite.getSystemPrompt(false, false, '18:30');
+      expect(prompt).toContain('evening');
+      expect(prompt).toContain('18:30');
+    });
+
+    it('does NOT include time-of-day context when bedtime is true', () => {
+      const prompt = dragonite.getSystemPrompt(false, true, '7:00');
+      expect(prompt).toContain('BEDTIME NOTICE');
+      expect(prompt).not.toContain('TIME CONTEXT');
+    });
+
+    it('includes the time string in the output when provided', () => {
+      const prompt = dragonite.getSystemPrompt(false, false, '16:20');
+      expect(prompt).toContain('16:20');
+    });
+  });
+
+  describe('magolor', () => {
+    it('includes morning context for morning time', () => {
+      const prompt = magolor.getSystemPrompt(false, false, '6:30');
+      expect(prompt).toContain('morning');
+      expect(prompt).toContain('6:30');
+    });
+
+    it('includes afternoon context for afternoon time', () => {
+      const prompt = magolor.getSystemPrompt(false, false, '12:00');
+      expect(prompt).toContain('afternoon');
+      expect(prompt).toContain('12:00');
+    });
+
+    it('includes evening context for evening time', () => {
+      const prompt = magolor.getSystemPrompt(false, false, '17:45');
+      expect(prompt).toContain('evening');
+      expect(prompt).toContain('17:45');
+    });
+
+    it('does NOT include time-of-day context when bedtime is true', () => {
+      const prompt = magolor.getSystemPrompt(false, true, '6:30');
+      expect(prompt).toContain('BEDTIME NOTICE');
+      expect(prompt).not.toContain('TIME CONTEXT');
+    });
+
+    it('includes the time string in the output when provided', () => {
+      const prompt = magolor.getSystemPrompt(false, false, '14:15');
+      expect(prompt).toContain('14:15');
+    });
+  });
+});
+
 describe('mewtwo config', () => {
   it('has correct id', () => {
     expect(mewtwo.id).toBe('mewtwo');
