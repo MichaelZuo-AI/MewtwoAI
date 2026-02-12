@@ -227,4 +227,6 @@ All content is G-rated and educational:
 
 ## License
 
-This project is for personal and educational use. Pokemon characters are trademarks of Nintendo / Game Freak / Creatures Inc. Kirby characters are trademarks of Nintendo / HAL Laboratory.
+MIT License -- see [LICENSE](LICENSE) for details.
+
+**Note:** This license covers the source code only. Pokemon (Mewtwo, Dragonite) and Kirby (Kirby, Magolor) characters and artwork are trademarks of Nintendo / Game Freak / Creatures Inc. / HAL Laboratory and are not covered by this license.
