@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **AI Dream Buddies** — An interactive voice chat web app where kids talk with their favorite characters to **improve English**. Built with Next.js 14, React, TypeScript, and Google Gemini 2.5 Flash Native Audio Dialog for real-time bidirectional voice.
 
 ### Key Features
-- 4 characters: Mewtwo, Kirby, Dragonite, Magolor — each with unique voice, personality, and theme
+- 6 characters: Mewtwo, Kirby, Dragonite, Magolor, Minions, Snorlax — each with unique voice, personality, and theme
 - Swipe left/right to switch characters with slide animations
 - Real-time bidirectional voice via Gemini Live API (WebSocket)
 - English learning focus: gentle correction, simple words, one new word at a time
@@ -31,7 +31,7 @@ npm run dev        # Start dev server (http://localhost:3000)
 npm run build      # Build for production
 npm start          # Start production server
 npm run lint       # Run linter
-npm test           # Run all 431 unit tests (13 suites)
+npm test           # Run all 591 unit tests (14 suites)
 ```
 
 ### Environment Variables Required
@@ -49,7 +49,7 @@ Browser microphone -> PCM 16kHz -> Gemini WebSocket -> PCM 24kHz -> speaker
 ### Component Tree
 ```
 page.tsx (selectedCharacterId in localStorage)
-  ├── CharacterSelect (grid of tappable portraits)
+  ├── CharacterSelect (2×3 grid of tappable portraits)
   └── VoiceChat(character, onBack) ← swipe left/right to switch
        ├── useSwipeGesture hook (touch events, 80px threshold)
        ├── CharacterDisplay (animated character + aura + crossfade)
@@ -63,7 +63,7 @@ page.tsx (selectedCharacterId in localStorage)
 - **Styling**: Tailwind CSS with per-character themes
 - **AI + Voice**: Google Gemini 2.5 Flash Native Audio Dialog (`@google/genai` v1.5.0)
 - **Storage**: LocalStorage for offline-first experience
-- **Testing**: Jest 30, React Testing Library (431 tests)
+- **Testing**: Jest 30, React Testing Library (591 tests)
 - **Deployment**: Vercel (auto-deploys on push to main)
 
 ### Project Structure
@@ -95,7 +95,9 @@ src/
 │   │   ├── mewtwo.ts         # Mewtwo: Fenrir voice, purple theme, bedtime addendum
 │   │   ├── kirby.ts          # Kirby: Puck voice, pink theme, bedtime addendum
 │   │   ├── dragonite.ts      # Dragonite: Aoede voice, orange theme, bedtime addendum
-│   │   └── magolor.ts        # Magolor: Kore voice, indigo theme, bedtime addendum
+│   │   ├── magolor.ts        # Magolor: Kore voice, indigo theme, bedtime addendum
+│   │   ├── minions.ts        # Minions: Zephyr voice, yellow theme, bedtime addendum
+│   │   └── snorlax.ts        # Snorlax: Charon voice, teal theme, bedtime addendum
 │   └── storage.ts            # LocalStorage utilities
 └── types/
     ├── character.ts           # CharacterConfig, CharacterTheme, CharacterStateImages
@@ -126,6 +128,8 @@ Each character file (`src/lib/characters/*.ts`) exports a `CharacterConfig` with
 | Kirby | Puck | Pink | Happy, bubbly, food-obsessed |
 | Dragonite | Aoede | Orange | Warm, gentle, huggable giant |
 | Magolor | Kore | Indigo | Clever, magical, reformed trickster |
+| Minions | Zephyr | Yellow | Silly, chaotic, banana-loving trio |
+| Snorlax | Charon | Teal | Sleepy, gentle, cozy giant |
 
 ### Bedtime Mode
 
