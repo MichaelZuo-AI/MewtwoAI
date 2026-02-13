@@ -2,7 +2,7 @@
 
 An interactive voice chat app where kids talk with their favorite characters to **learn English**. Powered by Gemini 2.5 Flash Native Audio Dialog for real-time bidirectional voice -- completely free.
 
-**4 characters** | **Swipe to switch** | **Bedtime mode** | **Persistent memory** | **$0 cost**
+**6 characters** | **Swipe to switch** | **Bedtime mode** | **Persistent memory** | **$0 cost**
 
 ## Quick Start
 
@@ -24,6 +24,8 @@ Get a free API key at [aistudio.google.com](https://aistudio.google.com/app/apik
 | **Kirby** | Happy, bubbly, food-obsessed | Puck |
 | **Dragonite** | Warm, gentle, huggable giant | Aoede |
 | **Magolor** | Clever, magical, reformed trickster | Kore |
+| **Minions** | Silly, chaotic, banana-loving trio | Zephyr |
+| **Snorlax** | Sleepy, gentle, cozy giant | Charon |
 
 Each character has unique theme colors, personality, mini-games, and story style. Swipe left/right to switch characters during a conversation.
 
@@ -71,7 +73,7 @@ Characters accumulate facts about your child across sessions:
 ```bash
 npm run dev        # Development server on :3000
 npm run build      # Production build
-npm test           # 511 unit tests
+npm test           # 591 unit tests
 npm run lint       # ESLint
 ```
 
@@ -109,7 +111,7 @@ src/
   lib/
     characters/                   # One config file per character
       index.ts                    # Registry + navigation helpers
-      mewtwo.ts, kirby.ts, dragonite.ts, magolor.ts
+      mewtwo.ts, kirby.ts, dragonite.ts, magolor.ts, minions.ts, snorlax.ts
     storage.ts                    # localStorage: conversations, memory, facts
   types/
     character.ts                  # CharacterConfig, CharacterTheme
@@ -154,6 +156,13 @@ All content is G-rated and educational:
 ---
 
 ## Changelog
+
+### v0.10.0 -- 2026-02-13
+**Minions + Snorlax + Responsive Picker**
+- Added Minions (Zephyr voice, yellow theme) and Snorlax (Charon voice, teal theme)
+- Character picker: 2×3 responsive grid layout that fits all 6 characters on iPhone
+- Full prompt suites: English learning, mini-games, mood awareness, bedtime, time-of-day for both new characters
+- 591 tests across 14 suites
 
 ### v0.9.0 -- 2026-02-12
 **Persistent Memory + Enhanced Prompts**
@@ -229,4 +238,4 @@ All content is G-rated and educational:
 
 MIT License -- see [LICENSE](LICENSE) for details.
 
-**Note:** This license covers the source code only. Pokemon (Mewtwo, Dragonite) and Kirby (Kirby, Magolor) characters and artwork are trademarks of Nintendo / Game Freak / Creatures Inc. / HAL Laboratory and are not covered by this license.
+**Note:** This license covers the source code only. Pokemon (Mewtwo, Dragonite, Snorlax), Kirby (Kirby, Magolor), and Minions characters and artwork are trademarks of their respective owners (Nintendo / Game Freak / Creatures Inc. / HAL Laboratory / Universal Pictures / Illumination) and are not covered by this license.
