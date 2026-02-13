@@ -57,6 +57,11 @@ export function useGeminiLive(character: CharacterConfig) {
   // C2 fix: prevent duplicate transcript saves from overlapping lifecycle events
   const sessionSavedRef = useRef(false);
 
+  // Track whether we've had an active session in this page load
+  // false = first connect after mount (app restart) → use character-specific memory
+  // true = subsequent connect (pause/resume or reconnect) → use React state
+  const hasConnectedRef = useRef(false);
+
   // Keep refs in sync
   useEffect(() => {
     isStoryModeRef.current = isStoryMode;
@@ -211,11 +216,25 @@ export function useGeminiLive(character: CharacterConfig) {
       }
 
       // 1. Get ephemeral token from our server
-      // Load conversation memory: prefer current session (pause/resume), fall back to localStorage (app restart)
+      // Load conversation memory:
+      // - First connect after app restart → use character-specific memory (per-character, explicitly saved)
+      // - Subsequent connects (pause/resume, reconnect) → use React state (has all accumulated messages)
+      const characterMemory = storage.getCharacterMemory(character.id);
       const currentSessionMessages = messagesRef.current;
-      const previousMemory = currentSessionMessages.length > 0
-        ? currentSessionMessages
-        : storage.getCharacterMemory(character.id);
+
+      let previousMemory: Message[];
+      if (hasConnectedRef.current) {
+        // Pause/resume or reconnect: React state has current + accumulated messages
+        previousMemory = currentSessionMessages;
+      } else {
+        // First connect after mount (app restart or first use):
+        // Character memory is per-character and was saved during last disconnect
+        previousMemory = characterMemory.length > 0
+          ? characterMemory
+          : currentSessionMessages;
+      }
+      hasConnectedRef.current = true;
+
       let memoryContext = '';
       if (previousMemory.length > 0) {
         const lines = previousMemory.slice(-10).map(m =>
