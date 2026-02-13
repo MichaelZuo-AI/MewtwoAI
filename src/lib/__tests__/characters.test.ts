@@ -66,8 +66,16 @@ describe('character registry', () => {
       expect(getNextCharacter('dragonite').id).toBe('magolor');
     });
 
-    it('wraps around: returns mewtwo after magolor', () => {
-      expect(getNextCharacter('magolor').id).toBe('mewtwo');
+    it('returns minions after magolor', () => {
+      expect(getNextCharacter('magolor').id).toBe('minions');
+    });
+
+    it('returns snorlax after minions', () => {
+      expect(getNextCharacter('minions').id).toBe('snorlax');
+    });
+
+    it('wraps around: returns mewtwo after snorlax', () => {
+      expect(getNextCharacter('snorlax').id).toBe('mewtwo');
     });
 
     it('returns a valid CharacterConfig', () => {
@@ -91,8 +99,16 @@ describe('character registry', () => {
       expect(getPreviousCharacter('magolor').id).toBe('dragonite');
     });
 
-    it('wraps around: returns magolor before mewtwo', () => {
-      expect(getPreviousCharacter('mewtwo').id).toBe('magolor');
+    it('returns minions before snorlax', () => {
+      expect(getPreviousCharacter('snorlax').id).toBe('minions');
+    });
+
+    it('returns magolor before minions', () => {
+      expect(getPreviousCharacter('minions').id).toBe('magolor');
+    });
+
+    it('wraps around: returns snorlax before mewtwo', () => {
+      expect(getPreviousCharacter('mewtwo').id).toBe('snorlax');
     });
 
     it('returns a valid CharacterConfig', () => {

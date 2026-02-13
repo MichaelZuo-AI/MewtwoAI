@@ -2,6 +2,8 @@ import { mewtwo } from './mewtwo';
 import { kirby } from './kirby';
 import { dragonite } from './dragonite';
 import { magolor } from './magolor';
+import { minions } from './minions';
+import { snorlax } from './snorlax';
 import { CharacterConfig } from '@/types/character';
 
 const CHARACTERS: Record<string, CharacterConfig> = {
@@ -9,6 +11,8 @@ const CHARACTERS: Record<string, CharacterConfig> = {
   kirby,
   dragonite,
   magolor,
+  minions,
+  snorlax,
 };
 
 export function getCharacter(id: string): CharacterConfig | undefined {
