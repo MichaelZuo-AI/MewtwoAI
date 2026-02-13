@@ -6,6 +6,7 @@ import { minions } from './minions';
 import { snorlax } from './snorlax';
 import { CharacterConfig } from '@/types/character';
 
+// Property order determines the character swipe navigation sequence.
 const CHARACTERS: Record<string, CharacterConfig> = {
   mewtwo,
   kirby,

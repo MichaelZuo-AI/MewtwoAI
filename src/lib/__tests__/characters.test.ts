@@ -3,6 +3,8 @@ import { mewtwo } from '../characters/mewtwo';
 import { kirby } from '../characters/kirby';
 import { dragonite } from '../characters/dragonite';
 import { magolor } from '../characters/magolor';
+import { minions } from '../characters/minions';
+import { snorlax } from '../characters/snorlax';
 
 describe('character registry', () => {
   describe('CHARACTERS', () => {
@@ -160,8 +162,18 @@ describe('character memory instructions', () => {
     expect(prompt).toContain('magical memory');
   });
 
+  it('minions prompt includes memory instruction', () => {
+    const prompt = minions.getSystemPrompt(false);
+    expect(prompt).toContain('Minion memory');
+  });
+
+  it('snorlax prompt includes memory instruction', () => {
+    const prompt = snorlax.getSystemPrompt(false);
+    expect(prompt).toContain('sleepy memory');
+  });
+
   it('all characters mention remembering facts naturally', () => {
-    const allPrompts = [mewtwo, kirby, dragonite, magolor].map(c => c.getSystemPrompt(false));
+    const allPrompts = [mewtwo, kirby, dragonite, magolor, minions, snorlax].map(c => c.getSystemPrompt(false));
     allPrompts.forEach(prompt => {
       expect(prompt).toContain('naturally');
     });
@@ -882,5 +894,437 @@ describe('magolor config', () => {
       expect(prompt).toContain('dream spell');
       expect(prompt).toContain('magic');
     });
+  });
+});
+
+describe('minions config', () => {
+  it('has correct id', () => {
+    expect(minions.id).toBe('minions');
+  });
+
+  it('has correct name', () => {
+    expect(minions.name).toBe('Minions');
+  });
+
+  it('has image path', () => {
+    expect(minions.image).toBe('/minions/minions.png');
+  });
+
+  it('uses Zephyr voice', () => {
+    expect(minions.voice).toBe('Zephyr');
+  });
+
+  it('has theme with warm yellow colors', () => {
+    expect(minions.theme.bgDeep).toBe('#1a1505');
+    expect(minions.theme.bgMid).toBe('#2e2510');
+    expect(minions.theme.accent).toBe('#fbbf24');
+  });
+
+  it('has aura colors for all voice states', () => {
+    expect(minions.theme.aura.idle).toBeDefined();
+    expect(minions.theme.aura.listening).toBeDefined();
+    expect(minions.theme.aura.speaking).toBeDefined();
+    expect(minions.theme.aura.processing).toBeDefined();
+  });
+
+  it('has ring colors for all voice states', () => {
+    expect(minions.theme.ring.idle).toBeDefined();
+    expect(minions.theme.ring.listening).toBeDefined();
+    expect(minions.theme.ring.speaking).toBeDefined();
+    expect(minions.theme.ring.processing).toBeDefined();
+  });
+
+  it('has yellow micGradient', () => {
+    expect(minions.theme.micGradient).toContain('yellow');
+  });
+
+  describe('getSystemPrompt', () => {
+    it('returns normal prompt when not story mode', () => {
+      const prompt = minions.getSystemPrompt(false);
+      expect(prompt).toContain('Minions');
+      expect(prompt).toContain('Bob');
+      expect(prompt).toContain('Kevin');
+      expect(prompt).toContain('Stuart');
+      expect(prompt).not.toContain('bedtime story');
+    });
+
+    it('includes story prompt in story mode', () => {
+      const prompt = minions.getSystemPrompt(true);
+      expect(prompt).toContain('Minions');
+      expect(prompt).toContain('bedtime story');
+    });
+
+    it('always returns a non-empty string', () => {
+      expect(typeof minions.getSystemPrompt(false)).toBe('string');
+      expect(minions.getSystemPrompt(false).length).toBeGreaterThan(0);
+      expect(typeof minions.getSystemPrompt(true)).toBe('string');
+      expect(minions.getSystemPrompt(true).length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('prompt content', () => {
+    const prompt = minions.getSystemPrompt(false);
+
+    it('establishes Minions identity with Despicable Me lore', () => {
+      expect(prompt).toContain('Minions');
+      expect(prompt).toContain('Bob');
+      expect(prompt).toContain('Kevin');
+      expect(prompt).toContain('Stuart');
+      expect(prompt).toContain('Gru');
+    });
+
+    it('includes Minion world knowledge', () => {
+      expect(prompt).toContain('BANANA');
+      expect(prompt).toContain('Bello');
+      expect(prompt).toContain('Minionese');
+    });
+
+    it('includes personality traits', () => {
+      expect(prompt).toContain('SILLY');
+      expect(prompt).toContain('chaotic');
+      expect(prompt).toContain('Loyal');
+    });
+
+    it('mentions Damian', () => {
+      expect(prompt).toContain('Damian');
+    });
+
+    it('specifies age-appropriate communication', () => {
+      expect(prompt).toContain('5');
+      expect(prompt).toContain('2-4 sentences');
+    });
+
+    it('includes voice acting directions', () => {
+      expect(prompt).toContain('HOW YOU SPEAK');
+      expect(prompt).toContain('fun sounds');
+      expect(prompt).toContain('Minionese');
+    });
+
+    it('includes parental goals', () => {
+      expect(prompt).toContain('BRAVERY');
+      expect(prompt).toContain('LEARNING');
+      expect(prompt).toContain('SPORTS');
+    });
+
+    it('enforces never breaking character', () => {
+      expect(prompt).toContain('NEVER break character');
+      expect(prompt).toContain('NEVER say "I\'m an AI"');
+    });
+
+    it('includes safety rules', () => {
+      expect(prompt).toContain('age-appropriate');
+      expect(prompt).toContain('positive');
+    });
+
+    it('keeps content kid-friendly', () => {
+      expect(prompt).toContain('5-year-old');
+      expect(prompt).toContain('silly');
+      expect(prompt).toContain('fun');
+    });
+  });
+
+  describe('story prompt content', () => {
+    const storyPrompt = minions.getSystemPrompt(true);
+
+    it('indicates story telling mode', () => {
+      expect(storyPrompt).toContain('bedtime story');
+    });
+
+    it('specifies story length', () => {
+      expect(storyPrompt).toContain('3-5 minutes');
+    });
+
+    it('requires happy ending', () => {
+      expect(storyPrompt).toContain('happy ending');
+    });
+
+    it('maintains Minions voice', () => {
+      expect(storyPrompt).toContain('Minions');
+    });
+
+    it('keeps stories not scary', () => {
+      expect(storyPrompt).toContain('funny');
+    });
+
+    it('targets 5-year-old audience', () => {
+      expect(storyPrompt).toContain('5');
+      expect(storyPrompt).toContain('learning English');
+    });
+  });
+
+  describe('bedtime prompt', () => {
+    it('appends bedtime addendum when isBedtime is true', () => {
+      const prompt = minions.getSystemPrompt(false, true);
+      expect(prompt).toContain('BEDTIME NOTICE');
+      expect(prompt).toContain('8:30 PM');
+    });
+
+    it('does not include bedtime addendum when isBedtime is false', () => {
+      const prompt = minions.getSystemPrompt(false, false);
+      expect(prompt).not.toContain('BEDTIME NOTICE');
+    });
+
+    it('does not include bedtime addendum when isBedtime is undefined', () => {
+      const prompt = minions.getSystemPrompt(false);
+      expect(prompt).not.toContain('BEDTIME NOTICE');
+    });
+
+    it('includes bedtime addendum with story mode', () => {
+      const prompt = minions.getSystemPrompt(true, true);
+      expect(prompt).toContain('bedtime story');
+      expect(prompt).toContain('BEDTIME NOTICE');
+    });
+
+    it('has in-character bedtime language', () => {
+      const prompt = minions.getSystemPrompt(false, true);
+      expect(prompt).toContain('sleepy');
+      expect(prompt).toContain('Minion');
+    });
+  });
+});
+
+describe('minions time-of-day context', () => {
+  it('includes morning context for morning time', () => {
+    const prompt = minions.getSystemPrompt(false, false, '9:00');
+    expect(prompt).toContain('morning');
+    expect(prompt).toContain('9:00');
+  });
+
+  it('includes afternoon context for afternoon time', () => {
+    const prompt = minions.getSystemPrompt(false, false, '14:00');
+    expect(prompt).toContain('afternoon');
+    expect(prompt).toContain('14:00');
+  });
+
+  it('includes evening context for evening time', () => {
+    const prompt = minions.getSystemPrompt(false, false, '18:00');
+    expect(prompt).toContain('evening');
+    expect(prompt).toContain('18:00');
+  });
+
+  it('does NOT include time-of-day context when bedtime is true', () => {
+    const prompt = minions.getSystemPrompt(false, true, '9:00');
+    expect(prompt).toContain('BEDTIME NOTICE');
+    expect(prompt).not.toContain('TIME CONTEXT');
+  });
+
+  it('includes the time string in the output when provided', () => {
+    const prompt = minions.getSystemPrompt(false, false, '10:30');
+    expect(prompt).toContain('10:30');
+  });
+});
+
+describe('snorlax config', () => {
+  it('has correct id', () => {
+    expect(snorlax.id).toBe('snorlax');
+  });
+
+  it('has correct name', () => {
+    expect(snorlax.name).toBe('Snorlax');
+  });
+
+  it('has image path', () => {
+    expect(snorlax.image).toBe('/snorlax/snorlax.png');
+  });
+
+  it('uses Charon voice', () => {
+    expect(snorlax.voice).toBe('Charon');
+  });
+
+  it('has theme with teal colors', () => {
+    expect(snorlax.theme.bgDeep).toBe('#051a1a');
+    expect(snorlax.theme.bgMid).toBe('#0d2e2e');
+    expect(snorlax.theme.accent).toBe('#2dd4bf');
+  });
+
+  it('has aura colors for all voice states', () => {
+    expect(snorlax.theme.aura.idle).toBeDefined();
+    expect(snorlax.theme.aura.listening).toBeDefined();
+    expect(snorlax.theme.aura.speaking).toBeDefined();
+    expect(snorlax.theme.aura.processing).toBeDefined();
+  });
+
+  it('has ring colors for all voice states', () => {
+    expect(snorlax.theme.ring.idle).toBeDefined();
+    expect(snorlax.theme.ring.listening).toBeDefined();
+    expect(snorlax.theme.ring.speaking).toBeDefined();
+    expect(snorlax.theme.ring.processing).toBeDefined();
+  });
+
+  it('has teal micGradient', () => {
+    expect(snorlax.theme.micGradient).toContain('teal');
+  });
+
+  describe('getSystemPrompt', () => {
+    it('returns normal prompt when not story mode', () => {
+      const prompt = snorlax.getSystemPrompt(false);
+      expect(prompt).toContain('Snorlax');
+      expect(prompt).toContain('Sleeping Pokémon');
+      expect(prompt).not.toContain('bedtime story');
+    });
+
+    it('includes story prompt in story mode', () => {
+      const prompt = snorlax.getSystemPrompt(true);
+      expect(prompt).toContain('Snorlax');
+      expect(prompt).toContain('bedtime story');
+    });
+
+    it('always returns a non-empty string', () => {
+      expect(typeof snorlax.getSystemPrompt(false)).toBe('string');
+      expect(snorlax.getSystemPrompt(false).length).toBeGreaterThan(0);
+      expect(typeof snorlax.getSystemPrompt(true)).toBe('string');
+      expect(snorlax.getSystemPrompt(true).length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('prompt content', () => {
+    const prompt = snorlax.getSystemPrompt(false);
+
+    it('establishes Snorlax identity with Pokemon lore', () => {
+      expect(prompt).toContain('Snorlax');
+      expect(prompt).toContain('Sleeping Pokémon');
+      expect(prompt).toContain('143');
+    });
+
+    it('includes key character traits', () => {
+      expect(prompt).toContain('SLEEPY');
+      expect(prompt).toContain('yawn');
+      expect(prompt).toContain('Rest');
+      expect(prompt).toContain('Snore');
+    });
+
+    it('includes Pokemon world knowledge', () => {
+      expect(prompt).toContain('Munchlax');
+      expect(prompt).toContain('Poké Flute');
+      expect(prompt).toContain('Body Slam');
+    });
+
+    it('mentions Damian', () => {
+      expect(prompt).toContain('Damian');
+    });
+
+    it('specifies age-appropriate communication', () => {
+      expect(prompt).toContain('5');
+      expect(prompt).toContain('2-4 sentences');
+    });
+
+    it('includes voice acting directions', () => {
+      expect(prompt).toContain('HOW YOU SPEAK');
+      expect(prompt).toContain('yawn');
+      expect(prompt).toContain('sleepy');
+    });
+
+    it('includes parental goals', () => {
+      expect(prompt).toContain('BRAVERY');
+      expect(prompt).toContain('LEARNING');
+      expect(prompt).toContain('SPORTS');
+    });
+
+    it('enforces never breaking character', () => {
+      expect(prompt).toContain('NEVER break character');
+      expect(prompt).toContain('NEVER say "I\'m an AI"');
+    });
+
+    it('includes safety rules', () => {
+      expect(prompt).toContain('age-appropriate');
+      expect(prompt).toContain('positive');
+    });
+
+    it('keeps content kid-friendly', () => {
+      expect(prompt).toContain('5-year-old');
+      expect(prompt).toContain('gentle');
+      expect(prompt).toContain('cozy');
+    });
+  });
+
+  describe('story prompt content', () => {
+    const storyPrompt = snorlax.getSystemPrompt(true);
+
+    it('indicates story telling mode', () => {
+      expect(storyPrompt).toContain('bedtime story');
+    });
+
+    it('specifies story length', () => {
+      expect(storyPrompt).toContain('3-5 minutes');
+    });
+
+    it('requires happy ending', () => {
+      expect(storyPrompt).toContain('happy ending');
+    });
+
+    it('maintains Snorlax voice', () => {
+      expect(storyPrompt).toContain('Snorlax');
+    });
+
+    it('keeps stories cozy and gentle', () => {
+      expect(storyPrompt).toContain('cozy');
+      expect(storyPrompt).toContain('gentle');
+    });
+
+    it('targets 5-year-old audience', () => {
+      expect(storyPrompt).toContain('5');
+      expect(storyPrompt).toContain('learning English');
+    });
+  });
+
+  describe('bedtime prompt', () => {
+    it('appends bedtime addendum when isBedtime is true', () => {
+      const prompt = snorlax.getSystemPrompt(false, true);
+      expect(prompt).toContain('BEDTIME NOTICE');
+      expect(prompt).toContain('8:30 PM');
+    });
+
+    it('does not include bedtime addendum when isBedtime is false', () => {
+      const prompt = snorlax.getSystemPrompt(false, false);
+      expect(prompt).not.toContain('BEDTIME NOTICE');
+    });
+
+    it('does not include bedtime addendum when isBedtime is undefined', () => {
+      const prompt = snorlax.getSystemPrompt(false);
+      expect(prompt).not.toContain('BEDTIME NOTICE');
+    });
+
+    it('includes bedtime addendum with story mode', () => {
+      const prompt = snorlax.getSystemPrompt(true, true);
+      expect(prompt).toContain('bedtime story');
+      expect(prompt).toContain('BEDTIME NOTICE');
+    });
+
+    it('has in-character bedtime language', () => {
+      const prompt = snorlax.getSystemPrompt(false, true);
+      expect(prompt).toContain('sleepy');
+      expect(prompt).toContain('Snorlax');
+    });
+  });
+});
+
+describe('snorlax time-of-day context', () => {
+  it('includes morning context for morning time', () => {
+    const prompt = snorlax.getSystemPrompt(false, false, '8:00');
+    expect(prompt).toContain('morning');
+    expect(prompt).toContain('8:00');
+  });
+
+  it('includes afternoon context for afternoon time', () => {
+    const prompt = snorlax.getSystemPrompt(false, false, '15:00');
+    expect(prompt).toContain('afternoon');
+    expect(prompt).toContain('15:00');
+  });
+
+  it('includes evening context for evening time', () => {
+    const prompt = snorlax.getSystemPrompt(false, false, '19:00');
+    expect(prompt).toContain('evening');
+    expect(prompt).toContain('19:00');
+  });
+
+  it('does NOT include time-of-day context when bedtime is true', () => {
+    const prompt = snorlax.getSystemPrompt(false, true, '8:00');
+    expect(prompt).toContain('BEDTIME NOTICE');
+    expect(prompt).not.toContain('TIME CONTEXT');
+  });
+
+  it('includes the time string in the output when provided', () => {
+    const prompt = snorlax.getSystemPrompt(false, false, '11:45');
+    expect(prompt).toContain('11:45');
   });
 });
