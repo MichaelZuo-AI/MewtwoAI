@@ -167,7 +167,7 @@ export function useGeminiLive(character: CharacterConfig) {
         try {
           // I2 fix: timeout prevents extraction from blocking connect indefinitely
           const abortController = new AbortController();
-          const timeoutId = setTimeout(() => abortController.abort(), 5000);
+          const timeoutId = setTimeout(() => abortController.abort(), 10000);
           const existingFacts = storage.getCharacterFacts();
           const extractRes = await fetch('/api/extract-memories', {
             method: 'POST',
@@ -221,7 +221,7 @@ export function useGeminiLive(character: CharacterConfig) {
         const lines = previousMemory.slice(-10).map(m =>
           `${m.role === 'user' ? 'Speaker' : character.name}: ${m.content}`
         ).join('\n');
-        memoryContext = `\n\nPREVIOUS CONVERSATION (remember who was speaking and what was discussed — use voice pitch to identify the same speaker):\n${lines}`;
+        memoryContext = `\n\nCONTINUING PREVIOUS SESSION — this is the SAME person speaking again. Read carefully. If the speaker told you their name (e.g. "I am Michael"), address them by that name immediately. Do NOT assume the speaker is Damian — check this conversation first:\n${lines}`;
       }
 
       const res = await fetch('/api/gemini-token', {
