@@ -2,7 +2,7 @@
 
 An interactive voice chat app where kids talk with their favorite characters to **learn English**. Powered by Gemini 2.5 Flash Native Audio Dialog for real-time bidirectional voice -- completely free.
 
-**6 characters** | **Swipe to switch** | **Bedtime mode** | **Persistent memory** | **$0 cost**
+**6 characters** | **Swipe to switch** | **Learning tracker** | **Parent reports** | **Bedtime mode** | **$0 cost**
 
 ## Quick Start
 
@@ -33,8 +33,11 @@ Each character has unique theme colors, personality, mini-games, and story style
 
 - **Real-Time Voice** -- Bidirectional audio via Gemini Live API (WebSocket, no text intermediary)
 - **English Learning** -- Gentle correction, simple words, one new word at a time, two-choice questions
+- **Learning Progress** -- Vocabulary tracking with spaced-repetition status (new → learning → reviewing → mastered)
+- **Adaptive Curriculum** -- Client-side word review scheduling and new word suggestions from 150-word age-appropriate bank
+- **Parent Report** -- Simplified Chinese learning progress reports with vocabulary stats, session history, and actionable suggestions
 - **Chinese-English Bridge** -- Characters naturally bridge Chinese words to English for bilingual families
-- **Persistent Memory** -- Characters remember facts about your child across sessions via lazy fact extraction
+- **Persistent Memory** -- Categorized fact extraction ([FAMILY], [LIKES], [LEARNING], etc.) shared across all characters
 - **Mini-Games** -- 5 themed games per character (quizzes, counting, sounds, would-you-rather)
 - **Mood Awareness** -- Characters adapt when the child is sad, shy, or excited
 - **Story Time** -- Each character tells original bedtime stories in their voice (3-5 min)
@@ -53,12 +56,18 @@ Browser mic -> PCM 16kHz -> Gemini WebSocket -> PCM 24kHz -> speaker
 
 Audio goes directly from the microphone to Gemini's WebSocket. No separate STT/TTS services needed. An ephemeral token endpoint keeps the API key secure.
 
-### Memory System
+### Memory & Learning System
 
-Characters accumulate facts about your child across sessions:
+Characters accumulate facts and track learning progress across sessions:
 1. On disconnect: raw transcript saved to localStorage (synchronous, crash-safe)
-2. On next connect: Gemini Flash extracts facts, merges with existing knowledge
-3. Facts are shared across all characters -- tell Mewtwo something, Kirby knows too
+2. On next connect: Gemini Flash runs fact extraction + learning analysis **in parallel** (no added latency)
+3. Facts are categorized ([FAMILY], [LIKES], [CAN-DO], [LEARNING], etc.) and shared across all characters
+4. Vocabulary entries track correct uses, struggles, and status transitions (new → mastered)
+5. Adaptive curriculum injects review words + new word suggestions into each session's system prompt
+
+### Parent Report
+
+Visit `/report` (or tap the chart icon on the character select screen) to see a Simplified Chinese learning progress report covering vocabulary growth, recent sessions, strengths, and next steps.
 
 ## Requirements
 
@@ -73,7 +82,7 @@ Characters accumulate facts about your child across sessions:
 ```bash
 npm run dev        # Development server on :3000
 npm run build      # Production build
-npm test           # 591 unit tests
+npm test           # 747 unit tests
 npm run lint       # ESLint
 ```
 
@@ -86,7 +95,7 @@ npm run lint       # ESLint
 | AI + Voice | Gemini 2.5 Flash Native Audio Dialog |
 | Styling | Tailwind CSS |
 | Storage | localStorage (offline-first) |
-| Testing | Jest 30, React Testing Library |
+| Testing | Jest 30, React Testing Library (747 tests) |
 | Deployment | Vercel (auto-deploys on push) |
 
 ## Project Structure
@@ -96,15 +105,19 @@ src/
   app/
     api/
       gemini-token/route.ts       # Ephemeral token endpoint
-      extract-memories/route.ts   # Fact extraction via Gemini Flash
+      analyze-learning/route.ts   # Learning progress analysis via Gemini Flash
+      extract-memories/route.ts   # Categorized fact extraction via Gemini Flash
+      parent-report/route.ts      # Chinese learning report generation
+    report/page.tsx               # Parent report page
     page.tsx                      # Character selection + swipe wrapper
   components/
     VoiceChat.tsx                 # Main voice chat interface
     CharacterDisplay.tsx          # Animated character + aura + crossfade
-    CharacterSelect.tsx           # Character selection grid
+    CharacterSelect.tsx           # Character selection grid + report button
+    ParentReportButton.tsx        # Report generation trigger
     CharacterDots.tsx             # Active character indicator
   hooks/
-    useGeminiLive.ts              # Central orchestrator: WebSocket, audio, memory, bedtime
+    useGeminiLive.ts              # Central orchestrator: WebSocket, audio, memory, learning, bedtime
     useAudioCapture.ts            # Mic -> PCM 16kHz base64
     useAudioPlayback.ts           # PCM 24kHz base64 -> speaker
     useSwipeGesture.ts            # Touch swipe with direction locking
@@ -112,10 +125,12 @@ src/
     characters/                   # One config file per character
       index.ts                    # Registry + navigation helpers
       mewtwo.ts, kirby.ts, dragonite.ts, magolor.ts, minions.ts, snorlax.ts
-    storage.ts                    # localStorage: conversations, memory, facts
+    learning.ts                   # Vocabulary tracking, curriculum planning, 150-word bank
+    storage.ts                    # localStorage: conversations, memory, facts, learning
   types/
     character.ts                  # CharacterConfig, CharacterTheme
     chat.ts                       # Message, VoiceState, LiveConnectionState
+    learning.ts                   # VocabularyEntry, SessionSummary, LearningProfile
 ```
 
 ## Adding a Character
@@ -156,6 +171,16 @@ All content is G-rated and educational:
 ---
 
 ## Changelog
+
+### v0.11.0 -- 2026-02-23
+**Learning Progress + Adaptive Curriculum + Parent Reports**
+- Learning progress tracking: vocabulary status transitions (new → learning → reviewing → mastered) via Gemini Flash analysis
+- Adaptive curriculum: client-side word review scheduling, new word suggestions from 150-word age-appropriate bank, activity recommendations based on struggle patterns
+- Parent report page (`/report`): Simplified Chinese learning reports with vocabulary stats, session history, strengths, and actionable suggestions
+- Enhanced memory consolidation: categorized fact extraction ([FAMILY], [LIKES], [CAN-DO], [EXPERIENCE], [LEARNING], [PERSONALITY])
+- Parallel extraction: fact extraction + learning analysis run via `Promise.allSettled` on connect -- no added latency
+- Server-side input validation: 200KB transcript size limits on all API routes
+- 747 tests across 19 suites
 
 ### v0.10.0 -- 2026-02-13
 **Minions + Snorlax + Responsive Picker**

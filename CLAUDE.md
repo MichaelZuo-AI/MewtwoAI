@@ -11,10 +11,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Swipe left/right to switch characters with slide animations
 - Real-time bidirectional voice via Gemini Live API (WebSocket)
 - English learning focus: gentle correction, simple words, one new word at a time
+- Learning progress tracking: vocabulary status (new → learning → reviewing → mastered)
+- Adaptive curriculum: client-side word review scheduling, new word suggestions from 150-word bank
+- Parent report: Simplified Chinese learning progress reports via `/report` page
+- Persistent memory with categorized fact extraction across sessions
 - Story time mode for bedtime stories (3-5 min, continuous)
 - Bedtime mode (8:30 PM KST): all characters gently encourage sleep
 - Voice Activity Detection handles turn-taking (2s chat, 5s story)
-- Conversation history persistence via transcriptions
 - Mobile-first PWA design, large touch targets for 5-year-olds
 
 ## Development Commands
@@ -31,7 +34,7 @@ npm run dev        # Start dev server (http://localhost:3000)
 npm run build      # Build for production
 npm start          # Start production server
 npm run lint       # Run linter
-npm test           # Run all 591 unit tests (14 suites)
+npm test           # Run all 747 unit tests (19 suites)
 ```
 
 ### Environment Variables Required
@@ -63,29 +66,35 @@ page.tsx (selectedCharacterId in localStorage)
 - **Styling**: Tailwind CSS with per-character themes
 - **AI + Voice**: Google Gemini 2.5 Flash Native Audio Dialog (`@google/genai` v1.5.0)
 - **Storage**: LocalStorage for offline-first experience
-- **Testing**: Jest 30, React Testing Library (591 tests)
+- **Testing**: Jest 30, React Testing Library (747 tests)
 - **Deployment**: Vercel (auto-deploys on push to main)
 
 ### Project Structure
 ```
 src/
 ├── app/
-│   ├── api/gemini-token/     # Ephemeral token endpoint (validates characterId, passes bedtime)
+│   ├── api/
+│   │   ├── gemini-token/     # Ephemeral token endpoint (validates characterId, passes bedtime)
+│   │   ├── analyze-learning/ # Learning progress analysis via Gemini Flash
+│   │   ├── extract-memories/ # Categorized fact extraction from transcripts
+│   │   └── parent-report/    # Chinese learning report generation
+│   ├── report/page.tsx       # Parent report page (markdown rendering)
 │   ├── page.tsx              # Character selection + swipe wrapper + slide animations
 │   ├── layout.tsx            # Root layout with PWA config
 │   └── globals.css           # All animations (float, speak, listen, think, slide, aura)
 ├── components/
 │   ├── VoiceChat.tsx         # Main voice chat interface
 │   ├── CharacterDisplay.tsx  # Animated character + aura + resolveImage() + crossfade
-│   ├── CharacterSelect.tsx   # Character selection grid
+│   ├── CharacterSelect.tsx   # Character selection grid + ParentReportButton
 │   ├── CharacterDots.tsx     # Active character dot indicator
 │   ├── ChatDrawer.tsx        # Expandable chat transcript
 │   ├── ChatPeek.tsx          # Latest message peek
 │   ├── MicButton.tsx         # Microphone control
+│   ├── ParentReportButton.tsx # Report generation trigger
 │   ├── SettingsMenu.tsx      # Settings panel
 │   └── StoryTimeButton.tsx   # Story mode toggle
 ├── hooks/
-│   ├── useGeminiLive.ts      # Central orchestrator: token, WebSocket, audio, bedtime
+│   ├── useGeminiLive.ts      # Central orchestrator: token, WebSocket, audio, bedtime, learning
 │   ├── useAudioCapture.ts    # Microphone capture -> PCM 16kHz base64
 │   ├── useAudioPlayback.ts   # PCM 24kHz base64 -> speaker playback queue
 │   └── useSwipeGesture.ts    # Touch swipe detection (horizontal/vertical locking)
@@ -98,10 +107,12 @@ src/
 │   │   ├── magolor.ts        # Magolor: Kore voice, indigo theme, bedtime addendum
 │   │   ├── minions.ts        # Minions: Zephyr voice, yellow theme, bedtime addendum
 │   │   └── snorlax.ts        # Snorlax: Charon voice, teal theme, bedtime addendum
-│   └── storage.ts            # LocalStorage utilities
+│   ├── learning.ts           # Vocabulary tracking, curriculum planning, word bank
+│   └── storage.ts            # LocalStorage: conversations, memory, facts, learning profile
 └── types/
     ├── character.ts           # CharacterConfig, CharacterTheme, CharacterStateImages
-    └── chat.ts                # Message, VoiceState, LiveConnectionState
+    ├── chat.ts                # Message, VoiceState, LiveConnectionState
+    └── learning.ts            # VocabularyEntry, SessionSummary, LearningProfile, CurriculumPlan
 ```
 
 ### Key Design Decisions
@@ -113,6 +124,8 @@ src/
 5. **Bedtime via KST**: Uses `Intl.DateTimeFormat.formatToParts()` with `Asia/Seoul` timezone — NOT device local time, NOT `new Date(toLocaleString())`
 6. **State-based images ready**: `CharacterStateImages` type + `resolveImage()` + crossfade infrastructure exists. Currently all characters use single image string
 7. **Swipe navigation**: Circular character switching with direction locking, drag resistance, 80px threshold
+8. **Parallel extraction**: Fact extraction + learning analysis run via `Promise.allSettled` on connect — no added latency
+9. **Client-side curriculum**: `computeCurriculum()` picks review words + suggests new words from 150-word bank — zero API calls, injected into system prompt
 
 ### Character System
 
