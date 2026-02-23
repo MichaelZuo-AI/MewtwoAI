@@ -1,4 +1,5 @@
 import { Conversation, Message } from '@/types/chat';
+import { LearningProfile } from '@/types/learning';
 
 const STORAGE_KEY = 'mewtwo-conversations';
 const CURRENT_CONVERSATION_KEY = 'mewtwo-current-conversation';
@@ -6,9 +7,14 @@ const CHARACTER_MEMORY_KEY = 'character-memory';
 const CHARACTER_FACTS_KEY = 'character-facts';
 const PENDING_EXTRACTION_KEY = 'pending-extraction';
 const SESSION_TRANSCRIPT_KEY = 'session-transcript';
+const LEARNING_PROFILE_KEY = 'learning-profile';
+const PENDING_LEARNING_KEY = 'pending-learning-analysis';
+const PARENT_REPORT_KEY = 'parent-report';
 const MAX_MESSAGES = 100; // Limit stored messages per conversation
 const MAX_MEMORY_MESSAGES = 10; // Last N messages saved per character
 const MAX_FACTS = 50;
+const MAX_VOCABULARY = 500;
+const MAX_SESSIONS = 50;
 const MAX_PENDING_SIZE = 200000; // ~200KB cap to prevent unbounded growth
 
 export const storage = {
@@ -109,6 +115,9 @@ export const storage = {
     localStorage.removeItem(CHARACTER_FACTS_KEY);
     localStorage.removeItem(PENDING_EXTRACTION_KEY);
     localStorage.removeItem(SESSION_TRANSCRIPT_KEY);
+    localStorage.removeItem(LEARNING_PROFILE_KEY);
+    localStorage.removeItem(PENDING_LEARNING_KEY);
+    localStorage.removeItem(PARENT_REPORT_KEY);
   },
 
   // Get messages for context (last N messages)
@@ -217,5 +226,85 @@ export const storage = {
   clearSessionTranscript: (): void => {
     if (typeof window === 'undefined') return;
     localStorage.removeItem(SESSION_TRANSCRIPT_KEY);
+  },
+
+  // Get learning profile
+  getLearningProfile: (): LearningProfile | null => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const data = localStorage.getItem(LEARNING_PROFILE_KEY);
+      return data ? JSON.parse(data) : null;
+    } catch {
+      return null;
+    }
+  },
+
+  // Save learning profile (cap vocab at MAX_VOCABULARY, sessions at MAX_SESSIONS)
+  saveLearningProfile: (profile: LearningProfile): void => {
+    if (typeof window === 'undefined') return;
+    try {
+      // Sort vocabulary by importance before capping — keep mastered/reviewing words,
+      // evict low-value "new" words first to preserve long-term learning progress
+      const statusPriority: Record<string, number> = { mastered: 0, reviewing: 1, learning: 2, new: 3 };
+      const sorted = [...profile.vocabulary].sort((a, b) => {
+        const aPrio = statusPriority[a.status] ?? 3;
+        const bPrio = statusPriority[b.status] ?? 3;
+        if (aPrio !== bPrio) return aPrio - bPrio;
+        return b.lastSeen - a.lastSeen; // more recent wins within same tier
+      });
+      const capped = {
+        ...profile,
+        vocabulary: sorted.slice(0, MAX_VOCABULARY),
+        sessions: profile.sessions.slice(-MAX_SESSIONS),
+        lastUpdated: Date.now(),
+      };
+      localStorage.setItem(LEARNING_PROFILE_KEY, JSON.stringify(capped));
+    } catch {
+      // Silently fail on storage errors
+    }
+  },
+
+  // Append transcript for pending learning analysis (append mode, like setPendingExtraction)
+  setPendingLearningAnalysis: (transcript: string): void => {
+    if (typeof window === 'undefined') return;
+    try {
+      const existing = localStorage.getItem(PENDING_LEARNING_KEY) || '';
+      const separator = existing ? '\n---\n' : '';
+      let combined = existing + separator + transcript;
+      if (combined.length > MAX_PENDING_SIZE) {
+        combined = combined.slice(-MAX_PENDING_SIZE);
+      }
+      localStorage.setItem(PENDING_LEARNING_KEY, combined);
+    } catch {
+      // Silently fail on storage errors
+    }
+  },
+
+  // Get pending learning analysis transcript
+  getPendingLearningAnalysis: (): string | null => {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem(PENDING_LEARNING_KEY) || null;
+  },
+
+  // Clear pending learning analysis after successful processing
+  clearPendingLearningAnalysis: (): void => {
+    if (typeof window === 'undefined') return;
+    localStorage.removeItem(PENDING_LEARNING_KEY);
+  },
+
+  // Get cached parent report
+  getParentReport: (): string | null => {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem(PARENT_REPORT_KEY) || null;
+  },
+
+  // Save parent report
+  saveParentReport: (report: string): void => {
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.setItem(PARENT_REPORT_KEY, report);
+    } catch {
+      // Silently fail on storage errors
+    }
   },
 };

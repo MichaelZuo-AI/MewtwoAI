@@ -2,6 +2,18 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import CharacterSelect from '../CharacterSelect';
 import { getAllCharacters } from '@/lib/characters';
 
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({ push: jest.fn() }),
+}));
+
+jest.mock('@/lib/storage', () => ({
+  storage: {
+    getLearningProfile: jest.fn(() => null),
+    getCharacterFacts: jest.fn(() => []),
+    saveParentReport: jest.fn(),
+  },
+}));
+
 describe('CharacterSelect', () => {
   const mockOnSelect = jest.fn();
 
@@ -51,5 +63,36 @@ describe('CharacterSelect', () => {
     const { container } = render(<CharacterSelect onSelect={mockOnSelect} />);
     const root = container.firstChild as HTMLElement;
     expect(root.className).toContain('bg-gray-950');
+  });
+
+  it('calls onSelect with correct id for each character', () => {
+    render(<CharacterSelect onSelect={mockOnSelect} />);
+    const characters = getAllCharacters();
+    characters.forEach(char => {
+      fireEvent.click(screen.getByLabelText(`Talk to ${char.name}`));
+      expect(mockOnSelect).toHaveBeenCalledWith(char.id);
+    });
+    expect(mockOnSelect).toHaveBeenCalledTimes(characters.length);
+  });
+
+  it('renders a ParentReportButton', () => {
+    render(<CharacterSelect onSelect={mockOnSelect} />);
+    // ParentReportButton renders a button with aria-label "Learning report"
+    expect(screen.getByRole('button', { name: 'Learning report' })).toBeInTheDocument();
+  });
+
+  it('renders a grid layout for characters', () => {
+    const { container } = render(<CharacterSelect onSelect={mockOnSelect} />);
+    const grid = container.querySelector('.grid-cols-2');
+    expect(grid).toBeInTheDocument();
+  });
+
+  it('each character button has aria-label', () => {
+    render(<CharacterSelect onSelect={mockOnSelect} />);
+    const characters = getAllCharacters();
+    characters.forEach(char => {
+      const btn = screen.getByLabelText(`Talk to ${char.name}`);
+      expect(btn).toBeInTheDocument();
+    });
   });
 });

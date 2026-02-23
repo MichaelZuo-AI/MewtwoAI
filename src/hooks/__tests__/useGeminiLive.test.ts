@@ -43,7 +43,30 @@ jest.mock('@/lib/storage', () => ({
     getSessionTranscript: jest.fn(() => null),
     setSessionTranscript: jest.fn(),
     clearSessionTranscript: jest.fn(),
+    getLearningProfile: jest.fn(() => null),
+    saveLearningProfile: jest.fn(),
+    getPendingLearningAnalysis: jest.fn(() => null),
+    setPendingLearningAnalysis: jest.fn(),
+    clearPendingLearningAnalysis: jest.fn(),
+    getParentReport: jest.fn(() => null),
+    saveParentReport: jest.fn(),
   },
+}));
+
+// Mock learning module
+jest.mock('@/lib/learning', () => ({
+  updateLearningProfile: jest.fn(() => ({
+    vocabulary: [],
+    sessions: [],
+    currentFocus: [],
+    lastUpdated: Date.now(),
+  })),
+  computeCurriculum: jest.fn(() => ({
+    wordsToReview: [],
+    newWordSuggestion: 'hello',
+    suggestedActivity: 'What Color Game',
+    knownWordsSnapshot: [],
+  })),
 }));
 
 // Mock fetch
@@ -902,6 +925,551 @@ describe('useGeminiLive', () => {
         capturedCallbacks.onclose(new CloseEvent('close'));
       });
 
+      expect(result.current.connectionState).toBe('disconnected');
+      expect(result.current.error).toBeNull();
+    });
+  });
+
+  describe('parallel extraction flow on connect', () => {
+    it('calls extract-memories API when pendingExtraction exists', async () => {
+      (storage.getPendingExtraction as jest.Mock).mockReturnValueOnce('Speaker: Hello');
+      (storage.getCharacterFacts as jest.Mock).mockReturnValueOnce(['old fact']);
+
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve({ facts: ['new fact'] }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve({ token: 'test-token' }),
+        });
+
+      const { result } = renderHook(() => useGeminiLive(mewtwo));
+      await act(async () => {
+        await result.current.connect();
+      });
+
+      const extractCall = mockFetch.mock.calls.find(c => c[0].includes('extract-memories'));
+      expect(extractCall).toBeDefined();
+    });
+
+    it('calls analyze-learning API when pendingLearningAnalysis exists', async () => {
+      (storage.getPendingLearningAnalysis as jest.Mock).mockReturnValueOnce('Speaker: I like cats');
+      (storage.getLearningProfile as jest.Mock).mockReturnValueOnce(null);
+
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve({
+            newWords: ['cat'],
+            reviewedWords: [],
+            struggles: [],
+            topicsCovered: ['animals'],
+            grammarNotes: [],
+          }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve({ token: 'test-token' }),
+        });
+
+      const { result } = renderHook(() => useGeminiLive(mewtwo));
+      await act(async () => {
+        await result.current.connect();
+      });
+
+      const analysisCall = mockFetch.mock.calls.find(c => c[0].includes('analyze-learning'));
+      expect(analysisCall).toBeDefined();
+    });
+
+    it('calls both extract-memories and analyze-learning in parallel when both pending', async () => {
+      (storage.getPendingExtraction as jest.Mock).mockReturnValueOnce('Speaker: Hello');
+      (storage.getPendingLearningAnalysis as jest.Mock).mockReturnValueOnce('Speaker: Hello');
+
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve({ facts: ['fact'] }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve({
+            newWords: [], reviewedWords: [], struggles: [], topicsCovered: [], grammarNotes: [],
+          }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve({ token: 'test-token' }),
+        });
+
+      const { result } = renderHook(() => useGeminiLive(mewtwo));
+      await act(async () => {
+        await result.current.connect();
+      });
+
+      const extractCall = mockFetch.mock.calls.find(c => c[0].includes('extract-memories'));
+      const analysisCall = mockFetch.mock.calls.find(c => c[0].includes('analyze-learning'));
+      expect(extractCall).toBeDefined();
+      expect(analysisCall).toBeDefined();
+    });
+
+    it('saves character facts and clears pending extraction when extraction succeeds', async () => {
+      (storage.getPendingExtraction as jest.Mock).mockReturnValueOnce('Speaker: Hello');
+      (storage.getCharacterFacts as jest.Mock).mockReturnValueOnce([]);
+
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve({ facts: ['Damian loves skiing'] }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve({ token: 'test-token' }),
+        });
+
+      const { result } = renderHook(() => useGeminiLive(mewtwo));
+      await act(async () => {
+        await result.current.connect();
+      });
+
+      expect(storage.saveCharacterFacts).toHaveBeenCalledWith(['Damian loves skiing']);
+      expect(storage.clearPendingExtraction).toHaveBeenCalled();
+    });
+
+    it('saves learning profile and clears pending learning when analysis succeeds', async () => {
+      (storage.getPendingLearningAnalysis as jest.Mock).mockReturnValueOnce('Speaker: I like cats');
+      (storage.getLearningProfile as jest.Mock).mockReturnValueOnce(null);
+
+      const mockAnalysisResult = {
+        newWords: ['cat'],
+        reviewedWords: [],
+        struggles: [],
+        topicsCovered: ['animals'],
+        grammarNotes: [],
+      };
+
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(mockAnalysisResult),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve({ token: 'test-token' }),
+        });
+
+      const { result } = renderHook(() => useGeminiLive(mewtwo));
+      await act(async () => {
+        await result.current.connect();
+      });
+
+      expect(storage.saveLearningProfile).toHaveBeenCalled();
+      expect(storage.clearPendingLearningAnalysis).toHaveBeenCalled();
+    });
+
+    it('does not call extraction APIs when nothing is pending', async () => {
+      (storage.getPendingExtraction as jest.Mock).mockReturnValueOnce(null);
+      (storage.getPendingLearningAnalysis as jest.Mock).mockReturnValueOnce(null);
+
+      const { result } = renderHook(() => useGeminiLive(mewtwo));
+      await act(async () => {
+        await result.current.connect();
+      });
+
+      const extractCall = mockFetch.mock.calls.find(c => c[0]?.includes('extract-memories'));
+      const analysisCall = mockFetch.mock.calls.find(c => c[0]?.includes('analyze-learning'));
+      expect(extractCall).toBeUndefined();
+      expect(analysisCall).toBeUndefined();
+    });
+
+    it('continues to connect even if extraction API calls fail', async () => {
+      (storage.getPendingExtraction as jest.Mock).mockReturnValueOnce('Speaker: Hello');
+
+      mockFetch
+        .mockRejectedValueOnce(new Error('network error'))
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve({ token: 'test-token' }),
+        });
+
+      const { result } = renderHook(() => useGeminiLive(mewtwo));
+      await act(async () => {
+        await result.current.connect();
+      });
+
+      // Should still connect despite extraction failure
+      expect(mockConnect).toHaveBeenCalled();
+    });
+
+    it('recovers orphaned session transcript on connect', async () => {
+      (storage.getSessionTranscript as jest.Mock).mockReturnValueOnce('Speaker: old session');
+
+      const { result } = renderHook(() => useGeminiLive(mewtwo));
+      await act(async () => {
+        await result.current.connect();
+      });
+
+      expect(storage.setPendingExtraction).toHaveBeenCalledWith('Speaker: old session');
+      expect(storage.setPendingLearningAnalysis).toHaveBeenCalledWith('Speaker: old session');
+      expect(storage.clearSessionTranscript).toHaveBeenCalled();
+    });
+
+    it('sends X-App-Source header in extract-memories call', async () => {
+      (storage.getPendingExtraction as jest.Mock).mockReturnValueOnce('Speaker: Hello');
+
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve({ facts: [] }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve({ token: 'test-token' }),
+        });
+
+      const { result } = renderHook(() => useGeminiLive(mewtwo));
+      await act(async () => {
+        await result.current.connect();
+      });
+
+      const extractCall = mockFetch.mock.calls.find(c => c[0].includes('extract-memories'));
+      expect(extractCall![1].headers['X-App-Source']).toBe('ai-dream-buddies');
+    });
+
+    it('sends X-App-Source header in analyze-learning call', async () => {
+      (storage.getPendingLearningAnalysis as jest.Mock).mockReturnValueOnce('Speaker: Hello');
+
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve({
+            newWords: [], reviewedWords: [], struggles: [], topicsCovered: [], grammarNotes: [],
+          }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve({ token: 'test-token' }),
+        });
+
+      const { result } = renderHook(() => useGeminiLive(mewtwo));
+      await act(async () => {
+        await result.current.connect();
+      });
+
+      const analysisCall = mockFetch.mock.calls.find(c => c[0].includes('analyze-learning'));
+      expect(analysisCall![1].headers['X-App-Source']).toBe('ai-dream-buddies');
+    });
+
+    it('passes existing vocabulary to analyze-learning', async () => {
+      (storage.getPendingLearningAnalysis as jest.Mock).mockReturnValueOnce('Speaker: I like dogs');
+      (storage.getLearningProfile as jest.Mock).mockReturnValueOnce({
+        vocabulary: [
+          { word: 'cat', firstSeen: 1, lastSeen: 1, correctUses: 2, struggles: 0, status: 'learning' },
+        ],
+        sessions: [],
+        currentFocus: [],
+        lastUpdated: 1,
+      });
+
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve({
+            newWords: ['dog'], reviewedWords: [], struggles: [], topicsCovered: [], grammarNotes: [],
+          }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve({ token: 'test-token' }),
+        });
+
+      const { result } = renderHook(() => useGeminiLive(mewtwo));
+      await act(async () => {
+        await result.current.connect();
+      });
+
+      const analysisCall = mockFetch.mock.calls.find(c => c[0].includes('analyze-learning'));
+      const body = JSON.parse(analysisCall![1].body);
+      expect(body.existingVocabulary).toContain('cat');
+    });
+  });
+
+  describe('curriculum and facts context in system prompt', () => {
+    it('injects curriculum context when learning profile exists', async () => {
+      (storage.getLearningProfile as jest.Mock).mockReturnValueOnce({
+        vocabulary: [
+          { word: 'cat', firstSeen: 1, lastSeen: 1, correctUses: 3, struggles: 0, status: 'reviewing' },
+        ],
+        sessions: [],
+        currentFocus: [],
+        lastUpdated: Date.now(),
+      });
+
+      const { result } = renderHook(() => useGeminiLive(mewtwo));
+      await act(async () => {
+        await result.current.connect();
+      });
+
+      const config = mockConnect.mock.calls[0][0].config;
+      expect(config.systemInstruction).toContain("DAMIAN'S ENGLISH LEARNING PROGRESS");
+    });
+
+    it('does not inject curriculum context when no learning profile', async () => {
+      (storage.getLearningProfile as jest.Mock).mockReturnValueOnce(null);
+
+      const { result } = renderHook(() => useGeminiLive(mewtwo));
+      await act(async () => {
+        await result.current.connect();
+      });
+
+      const config = mockConnect.mock.calls[0][0].config;
+      expect(config.systemInstruction).not.toContain("DAMIAN'S ENGLISH LEARNING PROGRESS");
+    });
+
+    it('does not inject curriculum context when vocabulary is empty', async () => {
+      (storage.getLearningProfile as jest.Mock).mockReturnValueOnce({
+        vocabulary: [],
+        sessions: [],
+        currentFocus: [],
+        lastUpdated: Date.now(),
+      });
+
+      const { result } = renderHook(() => useGeminiLive(mewtwo));
+      await act(async () => {
+        await result.current.connect();
+      });
+
+      const config = mockConnect.mock.calls[0][0].config;
+      expect(config.systemInstruction).not.toContain("DAMIAN'S ENGLISH LEARNING PROGRESS");
+    });
+
+    it('injects character facts context when facts exist', async () => {
+      (storage.getCharacterFacts as jest.Mock).mockReturnValueOnce([
+        'Damian loves skiing',
+        'Favorite color is blue',
+      ]);
+
+      const { result } = renderHook(() => useGeminiLive(mewtwo));
+      await act(async () => {
+        await result.current.connect();
+      });
+
+      const config = mockConnect.mock.calls[0][0].config;
+      expect(config.systemInstruction).toContain('THINGS YOU REMEMBER ABOUT DAMIAN AND HIS FAMILY');
+      expect(config.systemInstruction).toContain('Damian loves skiing');
+    });
+
+    it('does not inject facts context when facts array is empty', async () => {
+      (storage.getCharacterFacts as jest.Mock).mockReturnValueOnce([]);
+
+      const { result } = renderHook(() => useGeminiLive(mewtwo));
+      await act(async () => {
+        await result.current.connect();
+      });
+
+      const config = mockConnect.mock.calls[0][0].config;
+      expect(config.systemInstruction).not.toContain('THINGS YOU REMEMBER ABOUT DAMIAN AND HIS FAMILY');
+    });
+
+    it('includes computeCurriculum newWordSuggestion in system prompt', async () => {
+      const { computeCurriculum } = require('@/lib/learning');
+      (computeCurriculum as jest.Mock).mockReturnValueOnce({
+        wordsToReview: ['cat'],
+        newWordSuggestion: 'elephant',
+        suggestedActivity: 'Animal Sound Game',
+        knownWordsSnapshot: ['cat'],
+      });
+      (storage.getLearningProfile as jest.Mock).mockReturnValueOnce({
+        vocabulary: [{ word: 'cat', firstSeen: 1, lastSeen: 1, correctUses: 3, struggles: 0, status: 'reviewing' }],
+        sessions: [],
+        currentFocus: [],
+        lastUpdated: Date.now(),
+      });
+
+      const { result } = renderHook(() => useGeminiLive(mewtwo));
+      await act(async () => {
+        await result.current.connect();
+      });
+
+      const config = mockConnect.mock.calls[0][0].config;
+      expect(config.systemInstruction).toContain('elephant');
+    });
+  });
+
+  describe('disconnect saves pending learning analysis', () => {
+    it('calls setPendingLearningAnalysis on disconnect when messages exist', async () => {
+      (storage.addMessage as jest.Mock).mockReturnValueOnce({ id: '1', role: 'user', content: 'Hi', timestamp: 1 });
+
+      const { result } = renderHook(() => useGeminiLive(mewtwo));
+
+      await act(async () => {
+        await result.current.connect();
+      });
+
+      // Simulate a turn to add a message
+      act(() => {
+        capturedCallbacks.onmessage({ serverContent: { inputTranscription: { text: 'Hi Mewtwo' } } });
+        capturedCallbacks.onmessage({ serverContent: { turnComplete: true } });
+      });
+
+      act(() => {
+        result.current.disconnect();
+      });
+
+      expect(storage.setPendingLearningAnalysis).toHaveBeenCalled();
+    });
+
+    it('calls saveCharacterMemory on disconnect when messages exist', async () => {
+      (storage.addMessage as jest.Mock).mockReturnValueOnce({ id: '1', role: 'user', content: 'Hi', timestamp: 1 });
+
+      const { result } = renderHook(() => useGeminiLive(mewtwo));
+
+      await act(async () => {
+        await result.current.connect();
+      });
+
+      act(() => {
+        capturedCallbacks.onmessage({ serverContent: { inputTranscription: { text: 'Hi Mewtwo' } } });
+        capturedCallbacks.onmessage({ serverContent: { turnComplete: true } });
+      });
+
+      act(() => {
+        result.current.disconnect();
+      });
+
+      expect(storage.saveCharacterMemory).toHaveBeenCalledWith('mewtwo', expect.any(Array));
+    });
+  });
+
+  describe('periodic checkpoint every 5 turns', () => {
+    it('saves session transcript every 5th turn', async () => {
+      const { result } = renderHook(() => useGeminiLive(mewtwo));
+
+      await act(async () => {
+        await result.current.connect();
+      });
+
+      // Add some transcript content so buildCurrentTranscript() returns non-null
+      act(() => {
+        capturedCallbacks.onmessage({ serverContent: { inputTranscription: { text: 'Hello' } } });
+      });
+
+      // Fire 5 turnComplete events
+      for (let i = 0; i < 5; i++) {
+        act(() => {
+          capturedCallbacks.onmessage({ serverContent: { turnComplete: true } });
+        });
+      }
+
+      expect(storage.setSessionTranscript).toHaveBeenCalled();
+    });
+
+    it('does not save session transcript on non-multiple-of-5 turns', async () => {
+      const { result } = renderHook(() => useGeminiLive(mewtwo));
+
+      await act(async () => {
+        await result.current.connect();
+      });
+
+      // Fire 4 turnComplete events
+      for (let i = 0; i < 4; i++) {
+        act(() => {
+          capturedCallbacks.onmessage({ serverContent: { turnComplete: true } });
+        });
+      }
+
+      expect(storage.setSessionTranscript).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('story mode continuation', () => {
+    it('does not auto-continue when story seems done', async () => {
+      const { result } = renderHook(() => useGeminiLive(mewtwo));
+
+      await act(async () => {
+        await result.current.connect();
+      });
+
+      act(() => {
+        result.current.switchStoryMode(true);
+      });
+
+      // Turn complete with a "the end" message
+      act(() => {
+        capturedCallbacks.onmessage({ serverContent: { outputTranscription: { text: 'And they lived happily ever after. The End.' } } });
+        capturedCallbacks.onmessage({ serverContent: { turnComplete: true } });
+      });
+
+      // Should NOT send continuation because story ended
+      expect(mockSession.sendClientContent).not.toHaveBeenCalled();
+    });
+
+    it('sends continuation prompt in story mode when story not done', async () => {
+      const { result } = renderHook(() => useGeminiLive(mewtwo));
+
+      await act(async () => {
+        await result.current.connect();
+      });
+
+      act(() => {
+        result.current.switchStoryMode(true);
+      });
+
+      // Turn complete without end-of-story signal
+      act(() => {
+        capturedCallbacks.onmessage({ serverContent: { outputTranscription: { text: 'The dragon flew over the mountains.' } } });
+        capturedCallbacks.onmessage({ serverContent: { turnComplete: true } });
+      });
+
+      expect(mockSession.sendClientContent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          turns: [expect.objectContaining({ role: 'user' })],
+          turnComplete: true,
+        })
+      );
+    });
+
+    it('does not send continuation in chat mode', async () => {
+      const { result } = renderHook(() => useGeminiLive(mewtwo));
+
+      await act(async () => {
+        await result.current.connect();
+      });
+
+      // isStoryMode is false by default
+      act(() => {
+        capturedCallbacks.onmessage({ serverContent: { outputTranscription: { text: 'Hello!' } } });
+        capturedCallbacks.onmessage({ serverContent: { turnComplete: true } });
+      });
+
+      expect(mockSession.sendClientContent).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('onopen guard after manual disconnect', () => {
+    it('does not change state to connected if onopen fires after manual disconnect', async () => {
+      // Connect first so we have a session
+      const { result } = renderHook(() => useGeminiLive(mewtwo));
+
+      await act(async () => {
+        await result.current.connect();
+      });
+
+      // Disconnect manually
+      act(() => {
+        result.current.disconnect();
+      });
+
+      expect(result.current.connectionState).toBe('disconnected');
+
+      // If onopen fires now (late callback from network), it should not change state
+      // because isManualDisconnectRef is true
+      act(() => {
+        capturedCallbacks.onopen?.();
+      });
+
+      // Should still be disconnected (not 'connected')
       expect(result.current.connectionState).toBe('disconnected');
       expect(result.current.error).toBeNull();
     });

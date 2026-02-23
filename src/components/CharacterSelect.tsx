@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { getAllCharacters } from '@/lib/characters';
 import { resolveImage } from './CharacterDisplay';
+import ParentReportButton from './ParentReportButton';
 
 interface CharacterSelectProps {
   onSelect: (id: string) => void;
@@ -13,6 +14,9 @@ export default function CharacterSelect({ onSelect }: CharacterSelectProps) {
 
   return (
     <div className="h-[100dvh] bg-gray-950 overflow-y-auto" style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
+      <div className="absolute top-4 right-4 z-10" style={{ top: 'calc(env(safe-area-inset-top) + 1rem)' }}>
+        <ParentReportButton />
+      </div>
       <div className="min-h-full flex flex-col items-center justify-center py-6">
         <h1 className="text-white text-2xl font-bold mb-4">Who do you want to talk to?</h1>
         <div className="grid grid-cols-2 gap-3 px-6">

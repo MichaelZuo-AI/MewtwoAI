@@ -689,6 +689,297 @@ describe('storage', () => {
     })
   })
 
+  describe('learning profile', () => {
+    it('should return null when no learning profile exists', () => {
+      expect(storage.getLearningProfile()).toBeNull()
+    })
+
+    it('should save and retrieve learning profile', () => {
+      const profile = {
+        vocabulary: [{ word: 'cat', firstSeen: 1, lastSeen: 2, correctUses: 3, struggles: 0, status: 'reviewing' as const }],
+        sessions: [],
+        currentFocus: [],
+        lastUpdated: 1000,
+      }
+      storage.saveLearningProfile(profile)
+      const result = storage.getLearningProfile()
+      expect(result).not.toBeNull()
+      expect(result!.vocabulary[0].word).toBe('cat')
+    })
+
+    it('should cap vocabulary at 500', () => {
+      const vocab = Array.from({ length: 600 }, (_, i) => ({
+        word: `word${i}`,
+        firstSeen: 1,
+        lastSeen: 2,
+        correctUses: 1,
+        struggles: 0,
+        status: 'new' as const,
+      }))
+      const profile = {
+        vocabulary: vocab,
+        sessions: [],
+        currentFocus: [],
+        lastUpdated: 1000,
+      }
+      storage.saveLearningProfile(profile)
+      const result = storage.getLearningProfile()
+      expect(result!.vocabulary).toHaveLength(500)
+    })
+
+    it('should cap sessions at 50', () => {
+      const sessions = Array.from({ length: 60 }, (_, i) => ({
+        id: `s${i}`,
+        date: '2026-01-01',
+        timestamp: i,
+        characterId: 'mewtwo',
+        newWords: [],
+        reviewedWords: [],
+        struggles: [],
+        topicsCovered: [],
+        grammarNotes: [],
+        transcriptLength: 0,
+      }))
+      const profile = {
+        vocabulary: [],
+        sessions,
+        currentFocus: [],
+        lastUpdated: 1000,
+      }
+      storage.saveLearningProfile(profile)
+      const result = storage.getLearningProfile()
+      expect(result!.sessions).toHaveLength(50)
+    })
+
+    it('should handle corrupted data gracefully', () => {
+      localStorage.setItem('learning-profile', 'not json')
+      expect(storage.getLearningProfile()).toBeNull()
+    })
+
+    it('should return null in server environment', () => {
+      const originalWindow = global.window
+      // @ts-ignore
+      delete global.window
+      expect(storage.getLearningProfile()).toBeNull()
+      global.window = originalWindow
+    })
+
+    it('saveLearningProfile should be no-op in server environment', () => {
+      const originalWindow = global.window
+      // @ts-ignore
+      delete global.window
+      const profile = { vocabulary: [], sessions: [], currentFocus: [], lastUpdated: 1 }
+
+      const beforeKeys = Object.keys((global.localStorage as any)?.store || {});
+      storage.saveLearningProfile(profile)
+      const afterKeys = Object.keys((global.localStorage as any)?.store || {});
+      expect(afterKeys.filter(k => !beforeKeys.includes(k))).toEqual([]);
+
+      global.window = originalWindow
+    })
+
+    it('should update lastUpdated to current time on save', () => {
+      jest.useFakeTimers()
+      jest.setSystemTime(new Date('2026-01-01T12:00:00Z'))
+
+      const profile = {
+        vocabulary: [],
+        sessions: [],
+        currentFocus: [],
+        lastUpdated: 1, // old timestamp
+      }
+      storage.saveLearningProfile(profile)
+      const result = storage.getLearningProfile()
+      expect(result!.lastUpdated).toBe(new Date('2026-01-01T12:00:00Z').getTime())
+
+      jest.useRealTimers()
+    })
+
+    it('should prioritize mastered words over new words when capping', () => {
+      // 400 new words + 200 mastered words = 600 total → cap at 500
+      const newWords = Array.from({ length: 400 }, (_, i) => ({
+        word: `new${i}`,
+        firstSeen: i,
+        lastSeen: i,
+        correctUses: 1,
+        struggles: 0,
+        status: 'new' as const,
+      }))
+      const masteredWords = Array.from({ length: 200 }, (_, i) => ({
+        word: `mastered${i}`,
+        firstSeen: i,
+        lastSeen: i,
+        correctUses: 10,
+        struggles: 0,
+        status: 'mastered' as const,
+      }))
+      const profile = {
+        vocabulary: [...newWords, ...masteredWords],
+        sessions: [],
+        currentFocus: [],
+        lastUpdated: 1000,
+      }
+      storage.saveLearningProfile(profile)
+      const result = storage.getLearningProfile()
+      expect(result!.vocabulary).toHaveLength(500)
+      // All 200 mastered words should be preserved
+      const masteredCount = result!.vocabulary.filter(v => v.status === 'mastered').length
+      expect(masteredCount).toBe(200)
+      // Only 300 of 400 new words survive (100 evicted)
+      const newCount = result!.vocabulary.filter(v => v.status === 'new').length
+      expect(newCount).toBe(300)
+    })
+
+    it('should keep the most recent sessions when capping', () => {
+      const sessions = Array.from({ length: 60 }, (_, i) => ({
+        id: `s${i}`,
+        date: '2026-01-01',
+        timestamp: i,
+        characterId: 'mewtwo',
+        newWords: [],
+        reviewedWords: [],
+        struggles: [],
+        topicsCovered: [],
+        grammarNotes: [],
+        transcriptLength: 0,
+      }))
+      const profile = {
+        vocabulary: [],
+        sessions,
+        currentFocus: [],
+        lastUpdated: 1000,
+      }
+      storage.saveLearningProfile(profile)
+      const result = storage.getLearningProfile()
+      // slice(-50) keeps the last 50 (indices 10-59)
+      expect(result!.sessions[0].id).toBe('s10')
+      expect(result!.sessions[49].id).toBe('s59')
+    })
+  })
+
+  describe('pending learning analysis', () => {
+    it('should return null when no pending learning analysis exists', () => {
+      expect(storage.getPendingLearningAnalysis()).toBeNull()
+    })
+
+    it('should save and retrieve pending learning analysis', () => {
+      storage.setPendingLearningAnalysis('Speaker: Hello')
+      expect(storage.getPendingLearningAnalysis()).toBe('Speaker: Hello')
+    })
+
+    it('should append to existing pending learning analysis', () => {
+      storage.setPendingLearningAnalysis('Session 1')
+      storage.setPendingLearningAnalysis('Session 2')
+      const result = storage.getPendingLearningAnalysis()
+      expect(result).toContain('Session 1')
+      expect(result).toContain('Session 2')
+      expect(result).toContain('---')
+    })
+
+    it('should cap size at ~200KB', () => {
+      const chunk = 'A'.repeat(150000)
+      storage.setPendingLearningAnalysis(chunk)
+      storage.setPendingLearningAnalysis(chunk)
+      const result = storage.getPendingLearningAnalysis()!
+      expect(result.length).toBeLessThanOrEqual(200000)
+    })
+
+    it('should clear pending learning analysis', () => {
+      storage.setPendingLearningAnalysis('Some transcript')
+      storage.clearPendingLearningAnalysis()
+      expect(storage.getPendingLearningAnalysis()).toBeNull()
+    })
+
+    it('should return null in server environment', () => {
+      const originalWindow = global.window
+      // @ts-ignore
+      delete global.window
+      expect(storage.getPendingLearningAnalysis()).toBeNull()
+      global.window = originalWindow
+    })
+
+    it('setPendingLearningAnalysis should be no-op in server environment', () => {
+      const originalWindow = global.window
+      // @ts-ignore
+      delete global.window
+
+      const beforeKeys = Object.keys((global.localStorage as any)?.store || {})
+      storage.setPendingLearningAnalysis('transcript')
+      const afterKeys = Object.keys((global.localStorage as any)?.store || {})
+      expect(afterKeys.filter(k => !beforeKeys.includes(k))).toEqual([])
+
+      global.window = originalWindow
+    })
+  })
+
+  describe('parent report', () => {
+    it('should return null when no parent report exists', () => {
+      expect(storage.getParentReport()).toBeNull()
+    })
+
+    it('should save and retrieve parent report', () => {
+      storage.saveParentReport('## Report\nGreat progress!')
+      expect(storage.getParentReport()).toBe('## Report\nGreat progress!')
+    })
+
+    it('should overwrite existing report', () => {
+      storage.saveParentReport('Old report')
+      storage.saveParentReport('New report')
+      expect(storage.getParentReport()).toBe('New report')
+    })
+
+    it('should return null in server environment', () => {
+      const originalWindow = global.window
+      // @ts-ignore
+      delete global.window
+      expect(storage.getParentReport()).toBeNull()
+      global.window = originalWindow
+    })
+
+    it('saveParentReport should be no-op in server environment', () => {
+      const originalWindow = global.window
+      // @ts-ignore
+      delete global.window
+
+      const beforeKeys = Object.keys((global.localStorage as any)?.store || {})
+      storage.saveParentReport('report')
+      const afterKeys = Object.keys((global.localStorage as any)?.store || {})
+      expect(afterKeys.filter(k => !beforeKeys.includes(k))).toEqual([])
+
+      global.window = originalWindow
+    })
+  })
+
+  describe('clearAll with learning data', () => {
+    it('should clear learning profile when clearing all', () => {
+      storage.saveLearningProfile({ vocabulary: [], sessions: [], currentFocus: [], lastUpdated: 1 })
+      storage.clearAll()
+      expect(storage.getLearningProfile()).toBeNull()
+    })
+
+    it('should clear pending learning analysis when clearing all', () => {
+      storage.setPendingLearningAnalysis('transcript')
+      storage.clearAll()
+      expect(storage.getPendingLearningAnalysis()).toBeNull()
+    })
+
+    it('should clear parent report when clearing all', () => {
+      storage.saveParentReport('report')
+      storage.clearAll()
+      expect(storage.getParentReport()).toBeNull()
+    })
+
+    it('should clear all learning localStorage keys', () => {
+      storage.saveLearningProfile({ vocabulary: [], sessions: [], currentFocus: [], lastUpdated: 1 })
+      storage.setPendingLearningAnalysis('transcript')
+      storage.saveParentReport('report')
+      storage.clearAll()
+      expect(localStorage.getItem('learning-profile')).toBeNull()
+      expect(localStorage.getItem('pending-learning-analysis')).toBeNull()
+      expect(localStorage.getItem('parent-report')).toBeNull()
+    })
+  })
+
   describe('edge cases', () => {
     beforeEach(() => {
       jest.useFakeTimers()

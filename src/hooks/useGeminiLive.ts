@@ -6,6 +6,7 @@ import type { LiveServerMessage } from '@google/genai';
 import { useAudioCapture } from './useAudioCapture';
 import { useAudioPlayback } from './useAudioPlayback';
 import { storage } from '@/lib/storage';
+import { updateLearningProfile, computeCurriculum } from '@/lib/learning';
 import { Message, VoiceState, LiveConnectionState } from '@/types/chat';
 import { CharacterConfig } from '@/types/character';
 
@@ -163,36 +164,80 @@ export function useGeminiLive(character: CharacterConfig) {
       const orphanedTranscript = storage.getSessionTranscript();
       if (orphanedTranscript) {
         storage.setPendingExtraction(orphanedTranscript);
+        storage.setPendingLearningAnalysis(orphanedTranscript);
         storage.clearSessionTranscript();
       }
 
-      // Extract pending facts from previous session (lazy extraction)
+      // Extract pending facts + analyze learning from previous session (parallel, lazy)
       const pendingTranscript = storage.getPendingExtraction();
-      if (pendingTranscript) {
+      const pendingLearning = storage.getPendingLearningAnalysis();
+
+      if (pendingTranscript || pendingLearning) {
+        const abortController = new AbortController();
+        const timeoutId = setTimeout(() => abortController.abort(), 10000);
         try {
-          // I2 fix: timeout prevents extraction from blocking connect indefinitely
-          const abortController = new AbortController();
-          const timeoutId = setTimeout(() => abortController.abort(), 10000);
-          const existingFacts = storage.getCharacterFacts();
-          const extractRes = await fetch('/api/extract-memories', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-App-Source': 'ai-dream-buddies',
-            },
-            body: JSON.stringify({ transcript: pendingTranscript, existingFacts }),
-            signal: abortController.signal,
-          });
-          clearTimeout(timeoutId);
-          if (extractRes.ok) {
-            const { facts } = await extractRes.json();
-            if (Array.isArray(facts)) {
-              storage.saveCharacterFacts(facts);
-            }
-            storage.clearPendingExtraction();
+          const promises: Promise<void>[] = [];
+
+          // Fact extraction (unchanged logic, runs in parallel)
+          if (pendingTranscript) {
+            const existingFacts = storage.getCharacterFacts();
+            promises.push(
+              fetch('/api/extract-memories', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'X-App-Source': 'ai-dream-buddies',
+                },
+                body: JSON.stringify({ transcript: pendingTranscript, existingFacts }),
+                signal: abortController.signal,
+              }).then(async (extractRes) => {
+                if (extractRes.ok) {
+                  const { facts } = await extractRes.json();
+                  if (Array.isArray(facts)) {
+                    storage.saveCharacterFacts(facts);
+                  }
+                  storage.clearPendingExtraction();
+                }
+              })
+            );
           }
+
+          // Learning analysis (parallel)
+          if (pendingLearning) {
+            const existingProfile = storage.getLearningProfile();
+            const existingVocabulary = existingProfile?.vocabulary.map(v => v.word) || [];
+            promises.push(
+              fetch('/api/analyze-learning', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'X-App-Source': 'ai-dream-buddies',
+                },
+                body: JSON.stringify({ transcript: pendingLearning, existingVocabulary }),
+                signal: abortController.signal,
+              }).then(async (analysisRes) => {
+                if (analysisRes.ok) {
+                  const analysisResult = await analysisRes.json();
+                  if (analysisResult && Array.isArray(analysisResult.newWords)) {
+                    const updatedProfile = updateLearningProfile(
+                      existingProfile,
+                      analysisResult,
+                      character.id,
+                      pendingLearning.length
+                    );
+                    storage.saveLearningProfile(updatedProfile);
+                  }
+                  storage.clearPendingLearningAnalysis();
+                }
+              })
+            );
+          }
+
+          await Promise.allSettled(promises);
         } catch {
-          // Extraction failed — pending transcript stays for next attempt
+          // Failed — pending transcripts stay for next attempt
+        } finally {
+          clearTimeout(timeoutId);
         }
       }
 
@@ -213,6 +258,18 @@ export function useGeminiLive(character: CharacterConfig) {
       let factsContext = '';
       if (characterFacts.length > 0) {
         factsContext = `\n\nTHINGS YOU REMEMBER ABOUT DAMIAN AND HIS FAMILY (use these naturally in conversation — don't list them, just know them):\n${characterFacts.map(f => `- ${f}`).join('\n')}`;
+      }
+
+      // Load learning profile and compute curriculum (pure client-side, no API call)
+      let curriculumContext = '';
+      const learningProfile = storage.getLearningProfile();
+      if (learningProfile && learningProfile.vocabulary.length > 0) {
+        const plan = computeCurriculum(learningProfile);
+        curriculumContext = `\n\nDAMIAN'S ENGLISH LEARNING PROGRESS (guide today's conversation with this):
+- Words he knows well: ${plan.knownWordsSnapshot.slice(0, 10).join(', ') || 'still building'}
+- Words to review today: ${plan.wordsToReview.join(', ') || 'none yet'}
+- New word to try: "${plan.newWordSuggestion}"
+- Activity idea: ${plan.suggestedActivity}`;
       }
 
       // 1. Get ephemeral token from our server
@@ -399,7 +456,7 @@ export function useGeminiLive(character: CharacterConfig) {
               prebuiltVoiceConfig: { voiceName: character.voice },
             },
           },
-          systemInstruction: character.getSystemPrompt(isStoryModeRef.current, isBedtime, kstTimeString) + factsContext + memoryContext,
+          systemInstruction: character.getSystemPrompt(isStoryModeRef.current, isBedtime, kstTimeString) + factsContext + curriculumContext + memoryContext,
           realtimeInputConfig: {
             activityHandling: isStoryModeRef.current ? ActivityHandling.NO_INTERRUPTION : ActivityHandling.START_OF_ACTIVITY_INTERRUPTS,
             automaticActivityDetection: {
@@ -485,6 +542,7 @@ export function useGeminiLive(character: CharacterConfig) {
           `${m.role === 'user' ? 'Speaker' : character.name}: ${m.content}`
         ).join('\n');
         storage.setPendingExtraction(transcript);
+        storage.setPendingLearningAnalysis(transcript);
       }
     }
 
@@ -558,6 +616,7 @@ export function useGeminiLive(character: CharacterConfig) {
           `${m.role === 'user' ? 'Speaker' : character.name}: ${m.content}`
         ).join('\n');
         storage.setPendingExtraction(transcript);
+        storage.setPendingLearningAnalysis(transcript);
       }
     };
 
@@ -594,6 +653,7 @@ export function useGeminiLive(character: CharacterConfig) {
             `${m.role === 'user' ? 'Speaker' : character.name}: ${m.content}`
           ).join('\n');
           storage.setPendingExtraction(transcript);
+          storage.setPendingLearningAnalysis(transcript);
         }
       }
 
