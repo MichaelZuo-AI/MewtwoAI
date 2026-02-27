@@ -1599,6 +1599,204 @@ describe('useGeminiLive', () => {
     });
   });
 
+  describe('voice-triggered camera (cameraRequested)', () => {
+    it('exposes cameraRequested as false initially', () => {
+      const { result } = renderHook(() => useGeminiLive(mewtwo));
+      expect(result.current.cameraRequested).toBe(false);
+    });
+
+    it('exposes resetCameraRequest function', () => {
+      const { result } = renderHook(() => useGeminiLive(mewtwo));
+      expect(typeof result.current.resetCameraRequest).toBe('function');
+    });
+
+    it('sets cameraRequested when user says 拍照 (Mewtwo)', async () => {
+      const { result } = renderHook(() => useGeminiLive(mewtwo));
+
+      await act(async () => {
+        await result.current.connect();
+      });
+
+      act(() => {
+        capturedCallbacks.onmessage({
+          serverContent: { inputTranscription: { text: '我想拍照' } },
+        });
+      });
+
+      expect(result.current.cameraRequested).toBe(true);
+    });
+
+    it('sets cameraRequested when user says "take a photo"', async () => {
+      const { result } = renderHook(() => useGeminiLive(mewtwo));
+
+      await act(async () => {
+        await result.current.connect();
+      });
+
+      act(() => {
+        capturedCallbacks.onmessage({
+          serverContent: { inputTranscription: { text: 'I want to take a photo' } },
+        });
+      });
+
+      expect(result.current.cameraRequested).toBe(true);
+    });
+
+    it('sets cameraRequested when user says "take a picture"', async () => {
+      const { result } = renderHook(() => useGeminiLive(mewtwo));
+
+      await act(async () => {
+        await result.current.connect();
+      });
+
+      act(() => {
+        capturedCallbacks.onmessage({
+          serverContent: { inputTranscription: { text: 'Let me take a picture' } },
+        });
+      });
+
+      expect(result.current.cameraRequested).toBe(true);
+    });
+
+    it('sets cameraRequested when user says "show you a card"', async () => {
+      const { result } = renderHook(() => useGeminiLive(mewtwo));
+
+      await act(async () => {
+        await result.current.connect();
+      });
+
+      act(() => {
+        capturedCallbacks.onmessage({
+          serverContent: { inputTranscription: { text: 'I want to show you a card' } },
+        });
+      });
+
+      expect(result.current.cameraRequested).toBe(true);
+    });
+
+    it('detects trigger from accumulated transcript (split across messages)', async () => {
+      const { result } = renderHook(() => useGeminiLive(mewtwo));
+
+      await act(async () => {
+        await result.current.connect();
+      });
+
+      // "take a" arrives first, then "photo" arrives
+      act(() => {
+        capturedCallbacks.onmessage({
+          serverContent: { inputTranscription: { text: 'I want to take a ' } },
+        });
+      });
+      expect(result.current.cameraRequested).toBe(false);
+
+      act(() => {
+        capturedCallbacks.onmessage({
+          serverContent: { inputTranscription: { text: 'photo' } },
+        });
+      });
+      expect(result.current.cameraRequested).toBe(true);
+    });
+
+    it('does NOT set cameraRequested for Kirby', async () => {
+      const { result } = renderHook(() => useGeminiLive(kirby));
+
+      await act(async () => {
+        await result.current.connect();
+      });
+
+      act(() => {
+        capturedCallbacks.onmessage({
+          serverContent: { inputTranscription: { text: '拍照' } },
+        });
+      });
+
+      expect(result.current.cameraRequested).toBe(false);
+    });
+
+    it('resets cameraRequested on resetCameraRequest()', async () => {
+      const { result } = renderHook(() => useGeminiLive(mewtwo));
+
+      await act(async () => {
+        await result.current.connect();
+      });
+
+      act(() => {
+        capturedCallbacks.onmessage({
+          serverContent: { inputTranscription: { text: '拍照' } },
+        });
+      });
+      expect(result.current.cameraRequested).toBe(true);
+
+      act(() => {
+        result.current.resetCameraRequest();
+      });
+      expect(result.current.cameraRequested).toBe(false);
+    });
+
+    it('resets cameraRequested on disconnect', async () => {
+      const { result } = renderHook(() => useGeminiLive(mewtwo));
+
+      await act(async () => {
+        await result.current.connect();
+      });
+
+      act(() => {
+        capturedCallbacks.onmessage({
+          serverContent: { inputTranscription: { text: '拍照' } },
+        });
+      });
+      expect(result.current.cameraRequested).toBe(true);
+
+      act(() => {
+        result.current.disconnect();
+      });
+      expect(result.current.cameraRequested).toBe(false);
+    });
+
+    it('does not re-trigger during cooldown period', async () => {
+      jest.useFakeTimers();
+
+      const { result } = renderHook(() => useGeminiLive(mewtwo));
+
+      await act(async () => {
+        await result.current.connect();
+      });
+
+      // First trigger
+      act(() => {
+        capturedCallbacks.onmessage({
+          serverContent: { inputTranscription: { text: '拍照' } },
+        });
+      });
+      expect(result.current.cameraRequested).toBe(true);
+
+      // Reset the request but cooldown is still active
+      act(() => {
+        result.current.resetCameraRequest();
+      });
+      expect(result.current.cameraRequested).toBe(false);
+
+      // Try triggering again immediately — should not work (cooldown)
+      act(() => {
+        capturedCallbacks.onmessage({
+          serverContent: { inputTranscription: { text: '拍照 again' } },
+        });
+      });
+      expect(result.current.cameraRequested).toBe(false);
+
+      // After 10s cooldown expires, should work again
+      act(() => { jest.advanceTimersByTime(10000); });
+      act(() => {
+        capturedCallbacks.onmessage({
+          serverContent: { inputTranscription: { text: '拍照 once more' } },
+        });
+      });
+      expect(result.current.cameraRequested).toBe(true);
+
+      jest.useRealTimers();
+    });
+  });
+
   describe('bedtime detection (KST)', () => {
     // Bedtime is computed in Asia/Seoul (KST = UTC+9)
     // To set KST time, we set UTC time minus 9 hours

@@ -86,6 +86,17 @@ jest.mock('../CameraButton', () => {
   };
 });
 
+jest.mock('../CameraOverlay', () => {
+  return function MockCameraOverlay({ onCapture, onDismiss }: any) {
+    return (
+      <div data-testid="camera-overlay">
+        <button data-testid="camera-overlay-capture" onClick={onCapture}>capture</button>
+        <button data-testid="camera-overlay-dismiss" onClick={onDismiss}>dismiss</button>
+      </div>
+    );
+  };
+});
+
 jest.mock('@/lib/imageUtils', () => ({
   resizeImage: jest.fn(() => Promise.resolve({ base64: 'test-base64', mimeType: 'image/jpeg' })),
 }));
@@ -110,6 +121,7 @@ const mockDisconnect = jest.fn();
 const mockClearHistory = jest.fn();
 const mockSwitchStoryMode = jest.fn();
 const mockSendImage = jest.fn();
+const mockResetCameraRequest = jest.fn();
 const mockOnBack = jest.fn();
 
 const mockUseGeminiLive = jest.fn(() => ({
@@ -124,6 +136,8 @@ const mockUseGeminiLive = jest.fn(() => ({
   clearHistory: mockClearHistory,
   switchStoryMode: mockSwitchStoryMode,
   sendImage: mockSendImage,
+  cameraRequested: false,
+  resetCameraRequest: mockResetCameraRequest,
 }));
 
 jest.mock('@/hooks/useGeminiLive', () => ({
@@ -146,6 +160,8 @@ describe('VoiceChat', () => {
       clearHistory: mockClearHistory,
       switchStoryMode: mockSwitchStoryMode,
       sendImage: mockSendImage,
+      cameraRequested: false,
+      resetCameraRequest: mockResetCameraRequest,
     });
   });
 
@@ -652,6 +668,120 @@ describe('VoiceChat', () => {
       render(<VoiceChat character={mewtwo} onBack={mockOnBack} />);
       fireEvent.click(screen.getByTestId('story-time-button'));
       expect(mockSwitchStoryMode).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('camera overlay (voice-triggered)', () => {
+    it('does not render overlay by default', () => {
+      render(<VoiceChat character={mewtwo} onBack={mockOnBack} />);
+      expect(screen.queryByTestId('camera-overlay')).not.toBeInTheDocument();
+    });
+
+    it('renders overlay when cameraRequested + Mewtwo + connected', () => {
+      mockUseGeminiLive.mockReturnValue({
+        voiceState: 'idle',
+        connectionState: 'connected',
+        messages: [],
+        error: null,
+        isSupported: true,
+        isStoryMode: false,
+        connect: mockConnect,
+        disconnect: mockDisconnect,
+        clearHistory: mockClearHistory,
+        switchStoryMode: mockSwitchStoryMode,
+        sendImage: mockSendImage,
+        cameraRequested: true,
+        resetCameraRequest: mockResetCameraRequest,
+      });
+
+      render(<VoiceChat character={mewtwo} onBack={mockOnBack} />);
+      expect(screen.getByTestId('camera-overlay')).toBeInTheDocument();
+    });
+
+    it('does not render overlay for Kirby even when cameraRequested', () => {
+      mockUseGeminiLive.mockReturnValue({
+        voiceState: 'idle',
+        connectionState: 'connected',
+        messages: [],
+        error: null,
+        isSupported: true,
+        isStoryMode: false,
+        connect: mockConnect,
+        disconnect: mockDisconnect,
+        clearHistory: mockClearHistory,
+        switchStoryMode: mockSwitchStoryMode,
+        sendImage: mockSendImage,
+        cameraRequested: true,
+        resetCameraRequest: mockResetCameraRequest,
+      });
+
+      render(<VoiceChat character={kirby} onBack={mockOnBack} />);
+      expect(screen.queryByTestId('camera-overlay')).not.toBeInTheDocument();
+    });
+
+    it('does not render overlay when disconnected even when cameraRequested', () => {
+      mockUseGeminiLive.mockReturnValue({
+        voiceState: 'idle',
+        connectionState: 'disconnected',
+        messages: [],
+        error: null,
+        isSupported: true,
+        isStoryMode: false,
+        connect: mockConnect,
+        disconnect: mockDisconnect,
+        clearHistory: mockClearHistory,
+        switchStoryMode: mockSwitchStoryMode,
+        sendImage: mockSendImage,
+        cameraRequested: true,
+        resetCameraRequest: mockResetCameraRequest,
+      });
+
+      render(<VoiceChat character={mewtwo} onBack={mockOnBack} />);
+      expect(screen.queryByTestId('camera-overlay')).not.toBeInTheDocument();
+    });
+
+    it('calls resetCameraRequest when overlay capture is tapped', () => {
+      mockUseGeminiLive.mockReturnValue({
+        voiceState: 'idle',
+        connectionState: 'connected',
+        messages: [],
+        error: null,
+        isSupported: true,
+        isStoryMode: false,
+        connect: mockConnect,
+        disconnect: mockDisconnect,
+        clearHistory: mockClearHistory,
+        switchStoryMode: mockSwitchStoryMode,
+        sendImage: mockSendImage,
+        cameraRequested: true,
+        resetCameraRequest: mockResetCameraRequest,
+      });
+
+      render(<VoiceChat character={mewtwo} onBack={mockOnBack} />);
+      fireEvent.click(screen.getByTestId('camera-overlay-capture'));
+      expect(mockResetCameraRequest).toHaveBeenCalledTimes(1);
+    });
+
+    it('calls resetCameraRequest when overlay dismiss is tapped', () => {
+      mockUseGeminiLive.mockReturnValue({
+        voiceState: 'idle',
+        connectionState: 'connected',
+        messages: [],
+        error: null,
+        isSupported: true,
+        isStoryMode: false,
+        connect: mockConnect,
+        disconnect: mockDisconnect,
+        clearHistory: mockClearHistory,
+        switchStoryMode: mockSwitchStoryMode,
+        sendImage: mockSendImage,
+        cameraRequested: true,
+        resetCameraRequest: mockResetCameraRequest,
+      });
+
+      render(<VoiceChat character={mewtwo} onBack={mockOnBack} />);
+      fireEvent.click(screen.getByTestId('camera-overlay-dismiss'));
+      expect(mockResetCameraRequest).toHaveBeenCalledTimes(1);
     });
   });
 });

@@ -27,10 +27,13 @@ export function useGeminiLive(character: CharacterConfig) {
   }, []);
   const [error, setError] = useState<string | null>(null);
   const [isStoryMode, setIsStoryMode] = useState(false);
+  const [cameraRequested, setCameraRequested] = useState(false);
 
   const sessionRef = useRef<Session | null>(null);
   const userTranscriptRef = useRef('');
   const assistantTranscriptRef = useRef('');
+  const cameraRequestedRef = useRef(false);
+  const cameraCooldownRef = useRef(false);
   const isStoryModeRef = useRef(false);
 
   // Keep messages accessible from event handlers (beforeunload, visibilitychange)
@@ -164,6 +167,11 @@ export function useGeminiLive(character: CharacterConfig) {
     } catch {
       // Session closed between check and send — ignore
     }
+  }, []);
+
+  const resetCameraRequest = useCallback(() => {
+    setCameraRequested(false);
+    cameraRequestedRef.current = false;
   }, []);
 
   const connect = useCallback(async (isReconnect = false) => {
@@ -374,6 +382,20 @@ export function useGeminiLive(character: CharacterConfig) {
             // Input transcription (what user said)
             if (sc.inputTranscription?.text) {
               userTranscriptRef.current += sc.inputTranscription.text;
+
+              // Voice-triggered camera: detect "拍照" / "take a photo" etc. (Mewtwo only)
+              if (character.id === 'mewtwo'
+                  && !cameraRequestedRef.current && !cameraCooldownRef.current) {
+                const transcript = userTranscriptRef.current.toLowerCase();
+                const triggers = ['拍照', 'take a photo', 'take a picture',
+                                  'show you a card', 'look at my card', 'look at this card'];
+                if (triggers.some(t => transcript.includes(t))) {
+                  cameraRequestedRef.current = true;
+                  cameraCooldownRef.current = true;
+                  setCameraRequested(true);
+                  setTimeout(() => { cameraCooldownRef.current = false; }, 10000);
+                }
+              }
             }
 
             // Output transcription (what Mewtwo said)
@@ -588,6 +610,8 @@ export function useGeminiLive(character: CharacterConfig) {
     }
     setConnectionState('disconnected');
     setError(null);
+    setCameraRequested(false);
+    cameraRequestedRef.current = false;
   }, [character.id, stopCapture, stopPlayback, flushUserTranscript, flushAssistantTranscript]);
 
   const clearHistory = useCallback(() => {
@@ -710,5 +734,7 @@ export function useGeminiLive(character: CharacterConfig) {
     clearHistory,
     switchStoryMode,
     sendImage,
+    cameraRequested,
+    resetCameraRequest,
   };
 }

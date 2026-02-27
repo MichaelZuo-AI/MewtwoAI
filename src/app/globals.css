@@ -185,3 +185,32 @@ button {
 .animate-bounce {
   animation: bounce 1s infinite;
 }
+
+/* ===== Camera Overlay ===== */
+
+@keyframes camera-overlay-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.camera-overlay-fade-in {
+  animation: camera-overlay-fade-in 300ms ease-out;
+}
+
+@keyframes camera-overlay-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.5); }
+  50% { box-shadow: 0 0 0 20px rgba(139, 92, 246, 0); }
+}
+
+.camera-overlay-pulse {
+  animation: camera-overlay-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes camera-overlay-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+.camera-overlay-bounce {
+  animation: camera-overlay-bounce 1.5s ease-in-out infinite;
+}

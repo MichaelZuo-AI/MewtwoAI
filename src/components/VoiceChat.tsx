@@ -11,6 +11,7 @@ import ChatDrawer from './ChatDrawer';
 import SettingsMenu from './SettingsMenu';
 import StoryTimeButton from './StoryTimeButton';
 import CameraButton from './CameraButton';
+import CameraOverlay from './CameraOverlay';
 import { ArrowLeftIcon } from './Icons';
 import { resizeImage } from '@/lib/imageUtils';
 import CharacterDots from './CharacterDots';
@@ -34,6 +35,8 @@ export default function VoiceChat({ character, onBack }: VoiceChatProps) {
     clearHistory,
     switchStoryMode,
     sendImage,
+    cameraRequested,
+    resetCameraRequest,
   } = useGeminiLive(character);
 
   const { request: requestWakeLock, release: releaseWakeLock } = useWakeLock();
@@ -48,6 +51,15 @@ export default function VoiceChat({ character, onBack }: VoiceChatProps) {
   const handleCameraCapture = useCallback(() => {
     fileInputRef.current?.click();
   }, []);
+
+  const handleOverlayCapture = useCallback(() => {
+    resetCameraRequest();
+    fileInputRef.current?.click();
+  }, [resetCameraRequest]);
+
+  const handleOverlayDismiss = useCallback(() => {
+    resetCameraRequest();
+  }, [resetCameraRequest]);
 
   const handleFileSelected = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -157,6 +169,11 @@ export default function VoiceChat({ character, onBack }: VoiceChatProps) {
           className="hidden"
           aria-hidden="true"
         />
+      )}
+
+      {/* Voice-triggered camera overlay (Mewtwo only) */}
+      {isMewtwo && cameraRequested && isConnected && (
+        <CameraOverlay onCapture={handleOverlayCapture} onDismiss={handleOverlayDismiss} />
       )}
     </div>
   );
