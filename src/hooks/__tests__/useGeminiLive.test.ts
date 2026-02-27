@@ -1475,6 +1475,130 @@ describe('useGeminiLive', () => {
     });
   });
 
+  describe('sendImage', () => {
+    it('exposes sendImage in return value', () => {
+      const { result } = renderHook(() => useGeminiLive(mewtwo));
+      expect(result.current.sendImage).toBeDefined();
+      expect(typeof result.current.sendImage).toBe('function');
+    });
+
+    it('calls sendClientContent with image data when connected', async () => {
+      const { result } = renderHook(() => useGeminiLive(mewtwo));
+
+      await act(async () => {
+        await result.current.connect();
+      });
+
+      act(() => {
+        result.current.sendImage('base64data', 'image/jpeg');
+      });
+
+      expect(mockSession.sendClientContent).toHaveBeenCalledWith({
+        turns: [{
+          role: 'user',
+          parts: [
+            { inlineData: { data: 'base64data', mimeType: 'image/jpeg' } },
+            { text: 'I am showing you a Pokemon card! Look at this card and tell me about this Pokemon.' },
+          ],
+        }],
+        turnComplete: true,
+      });
+    });
+
+    it('adds card message to messages when sending image', async () => {
+      const { result } = renderHook(() => useGeminiLive(mewtwo));
+
+      await act(async () => {
+        await result.current.connect();
+      });
+
+      act(() => {
+        result.current.sendImage('base64data', 'image/jpeg');
+      });
+
+      expect(result.current.messages).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            role: 'user',
+            content: '[Showed a Pokemon card]',
+          }),
+        ])
+      );
+    });
+
+    it('does not throw when session is not connected', () => {
+      const { result } = renderHook(() => useGeminiLive(mewtwo));
+
+      // Not connected, sendImage should be a no-op
+      expect(() => {
+        act(() => {
+          result.current.sendImage('base64data', 'image/jpeg');
+        });
+      }).not.toThrow();
+
+      expect(mockSession.sendClientContent).not.toHaveBeenCalled();
+    });
+
+    it('passes mimeType through to sendClientContent', async () => {
+      const { result } = renderHook(() => useGeminiLive(mewtwo));
+
+      await act(async () => {
+        await result.current.connect();
+      });
+
+      act(() => {
+        result.current.sendImage('pngdata', 'image/png');
+      });
+
+      expect(mockSession.sendClientContent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          turns: [expect.objectContaining({
+            parts: expect.arrayContaining([
+              { inlineData: { data: 'pngdata', mimeType: 'image/png' } },
+            ]),
+          })],
+        })
+      );
+    });
+
+    it('persists image message via storage.addMessage', async () => {
+      const { result } = renderHook(() => useGeminiLive(mewtwo));
+
+      await act(async () => {
+        await result.current.connect();
+      });
+
+      act(() => {
+        result.current.sendImage('base64data', 'image/jpeg');
+      });
+
+      expect(storage.addMessage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          role: 'user',
+          content: '[Showed a Pokemon card]',
+        })
+      );
+    });
+
+    it('does not throw when sendClientContent throws', async () => {
+      const { result } = renderHook(() => useGeminiLive(mewtwo));
+
+      await act(async () => {
+        await result.current.connect();
+      });
+
+      mockSession.sendClientContent.mockImplementationOnce(() => {
+        throw new Error('Session already closed');
+      });
+
+      expect(() => {
+        act(() => {
+          result.current.sendImage('base64data', 'image/jpeg');
+        });
+      }).not.toThrow();
+    });
+  });
+
   describe('bedtime detection (KST)', () => {
     // Bedtime is computed in Asia/Seoul (KST = UTC+9)
     // To set KST time, we set UTC time minus 9 hours

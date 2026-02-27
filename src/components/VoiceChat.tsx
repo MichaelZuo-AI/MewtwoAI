@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useGeminiLive } from '@/hooks/useGeminiLive';
 import { useWakeLock } from '@/hooks/useWakeLock';
 import { CharacterConfig } from '@/types/character';
@@ -10,7 +10,9 @@ import ChatPeek from './ChatPeek';
 import ChatDrawer from './ChatDrawer';
 import SettingsMenu from './SettingsMenu';
 import StoryTimeButton from './StoryTimeButton';
+import CameraButton from './CameraButton';
 import { ArrowLeftIcon } from './Icons';
+import { resizeImage } from '@/lib/imageUtils';
 import CharacterDots from './CharacterDots';
 import { getAllCharacters } from '@/lib/characters';
 
@@ -31,13 +33,37 @@ export default function VoiceChat({ character, onBack }: VoiceChatProps) {
     disconnect,
     clearHistory,
     switchStoryMode,
+    sendImage,
   } = useGeminiLive(character);
 
   const { request: requestWakeLock, release: releaseWakeLock } = useWakeLock();
   const [chatOpen, setChatOpen] = useState(false);
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const isMewtwo = character.id === 'mewtwo';
+
   const isConnected = connectionState === 'connected';
   const isReconnecting = connectionState === 'reconnecting';
+
+  const handleCameraCapture = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+
+  const handleFileSelected = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    // Reset so the same file can be selected again
+    e.target.value = '';
+    // Validate file type and size (10MB limit)
+    if (!file.type.startsWith('image/')) return;
+    if (file.size > 10 * 1024 * 1024) return;
+    try {
+      const { base64, mimeType } = await resizeImage(file);
+      sendImage(base64, mimeType);
+    } catch (err) {
+      console.warn('Failed to process image:', err);
+    }
+  }, [sendImage]);
 
   // Keep screen awake while connected
   useEffect(() => {
@@ -70,7 +96,12 @@ export default function VoiceChat({ character, onBack }: VoiceChatProps) {
           </button>
           <SettingsMenu onClearHistory={clearHistory} bgColor={character.theme.bgMid} />
         </div>
-        <StoryTimeButton onToggle={switchStoryMode} isStoryMode={isStoryMode} />
+        <div className="flex items-center gap-2">
+          {isMewtwo && (
+            <CameraButton onCapture={handleCameraCapture} disabled={!isConnected} />
+          )}
+          <StoryTimeButton onToggle={switchStoryMode} isStoryMode={isStoryMode} />
+        </div>
       </div>
 
       {/* Hero zone — character takes ~60% of screen */}
@@ -115,6 +146,18 @@ export default function VoiceChat({ character, onBack }: VoiceChatProps) {
         onClearHistory={clearHistory}
         bgColor={character.theme.bgDeep}
       />
+
+      {/* Hidden file input for camera capture (Mewtwo only) */}
+      {isMewtwo && (
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleFileSelected}
+          className="hidden"
+          aria-hidden="true"
+        />
+      )}
     </div>
   );
 }

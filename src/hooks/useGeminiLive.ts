@@ -141,6 +141,31 @@ export function useGeminiLive(character: CharacterConfig) {
     }
   }, []);
 
+  const sendImage = useCallback((base64: string, mimeType: string) => {
+    if (!sessionRef.current) return;
+    try {
+      sessionRef.current.sendClientContent({
+        turns: [{
+          role: 'user',
+          parts: [
+            { inlineData: { data: base64, mimeType } },
+            { text: 'I am showing you a Pokemon card! Look at this card and tell me about this Pokemon.' },
+          ],
+        }],
+        turnComplete: true,
+      });
+      const msg = storage.addMessage({
+        role: 'user',
+        content: '[Showed a Pokemon card]',
+        timestamp: Date.now(),
+      });
+      setMessages(prev => [...prev, msg]);
+      messagesRef.current = [...messagesRef.current, msg];
+    } catch {
+      // Session closed between check and send — ignore
+    }
+  }, []);
+
   const connect = useCallback(async (isReconnect = false) => {
     // C2 fix: prevent concurrent connect calls
     if (isConnectingRef.current) return;
@@ -684,5 +709,6 @@ export function useGeminiLive(character: CharacterConfig) {
     disconnect,
     clearHistory,
     switchStoryMode,
+    sendImage,
   };
 }

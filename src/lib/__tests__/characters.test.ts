@@ -180,6 +180,47 @@ describe('character memory instructions', () => {
   });
 });
 
+describe('mewtwo pokemon card recognition', () => {
+  it('mewtwo prompt contains POKEMON CARD RECOGNITION section', () => {
+    const prompt = mewtwo.getSystemPrompt(false);
+    expect(prompt).toContain('POKEMON CARD RECOGNITION');
+    expect(prompt).toContain('psychic powers');
+  });
+
+  it('mewtwo prompt instructs to never say "I see an image"', () => {
+    const prompt = mewtwo.getSystemPrompt(false);
+    expect(prompt).toContain("NEVER say \"I see an image\"");
+    expect(prompt).toContain('psychic powers');
+  });
+
+  it('mewtwo prompt includes fuzzy card handling instruction', () => {
+    const prompt = mewtwo.getSystemPrompt(false);
+    expect(prompt).toContain('hold the card closer');
+  });
+
+  it('mewtwo prompt includes follow-up prompt for more cards', () => {
+    const prompt = mewtwo.getSystemPrompt(false);
+    expect(prompt).toContain('more cards');
+  });
+
+  it('mewtwo story prompt does not remove pokemon card recognition instructions', () => {
+    const prompt = mewtwo.getSystemPrompt(true);
+    expect(prompt).toContain('POKEMON CARD RECOGNITION');
+  });
+
+  it('mewtwo bedtime prompt does not remove pokemon card recognition instructions', () => {
+    const prompt = mewtwo.getSystemPrompt(false, true, '21:00');
+    expect(prompt).toContain('POKEMON CARD RECOGNITION');
+  });
+
+  it('other characters do not have POKEMON CARD RECOGNITION section', () => {
+    [kirby, dragonite, magolor, minions, snorlax].forEach(character => {
+      const prompt = character.getSystemPrompt(false);
+      expect(prompt).not.toContain('POKEMON CARD RECOGNITION');
+    });
+  });
+});
+
 describe('time-of-day context', () => {
   describe('mewtwo', () => {
     it('includes morning context for morning time', () => {
