@@ -39,6 +39,7 @@ Each character has unique theme colors, personality, mini-games, and story style
 - **Chinese-English Bridge** -- Characters naturally bridge Chinese words to English for bilingual families
 - **Persistent Memory** -- Categorized fact extraction ([FAMILY], [LIKES], [LEARNING], etc.) shared across all characters
 - **Mini-Games** -- 5 themed games per character (quizzes, counting, sounds, would-you-rather)
+- **Pokemon Card Scan** -- Mewtwo identifies physical Pokemon cards via device camera using "psychic powers"
 - **Mood Awareness** -- Characters adapt when the child is sad, shy, or excited
 - **Story Time** -- Each character tells original bedtime stories in their voice (3-5 min)
 - **Bedtime Mode** -- After 8:30 PM KST, characters gently encourage sleep
@@ -82,7 +83,7 @@ Visit `/report` (or tap the chart icon on the character select screen) to see a 
 ```bash
 npm run dev        # Development server on :3000
 npm run build      # Production build
-npm test           # 747 unit tests
+npm test           # 808 unit tests
 npm run lint       # ESLint
 ```
 
@@ -95,7 +96,7 @@ npm run lint       # ESLint
 | AI + Voice | Gemini 2.5 Flash Native Audio Dialog |
 | Styling | Tailwind CSS |
 | Storage | localStorage (offline-first) |
-| Testing | Jest 30, React Testing Library (747 tests) |
+| Testing | Jest 30, React Testing Library (808 tests) |
 | Deployment | Vercel (auto-deploys on push) |
 
 ## Project Structure
@@ -111,7 +112,8 @@ src/
     report/page.tsx               # Parent report page
     page.tsx                      # Character selection + swipe wrapper
   components/
-    VoiceChat.tsx                 # Main voice chat interface
+    VoiceChat.tsx                 # Main voice chat interface + camera wiring
+    CameraButton.tsx              # Pokemon card camera trigger (Mewtwo only)
     CharacterDisplay.tsx          # Animated character + aura + crossfade
     CharacterSelect.tsx           # Character selection grid + report button
     ParentReportButton.tsx        # Report generation trigger
@@ -125,6 +127,7 @@ src/
     characters/                   # One config file per character
       index.ts                    # Registry + navigation helpers
       mewtwo.ts, kirby.ts, dragonite.ts, magolor.ts, minions.ts, snorlax.ts
+    imageUtils.ts                 # Image resize/compress for camera capture
     learning.ts                   # Vocabulary tracking, curriculum planning, 150-word bank
     storage.ts                    # localStorage: conversations, memory, facts, learning
   types/
@@ -171,6 +174,16 @@ All content is G-rated and educational:
 ---
 
 ## Changelog
+
+### v0.12.0 -- 2026-02-27
+**Pokemon Card Camera Scan**
+- Mewtwo can identify physical Pokemon cards via device camera ("I sense a Pokemon with my psychic powers!")
+- Camera button appears in Mewtwo's top bar (next to story mode), only when connected
+- Image resized to 1024px max JPEG client-side, sent via Gemini Live `sendClientContent()`
+- Pokemon card recognition prompt: name, type, one cool fact, one English word, follow-up question
+- File type/size validation (images only, 10MB limit), zero-dimension guard
+- Image messages persisted to storage for memory/fact extraction
+- 808 tests across 21 suites
 
 ### v0.11.0 -- 2026-02-23
 **Learning Progress + Adaptive Curriculum + Parent Reports**
