@@ -27,13 +27,10 @@ export function useGeminiLive(character: CharacterConfig) {
   }, []);
   const [error, setError] = useState<string | null>(null);
   const [isStoryMode, setIsStoryMode] = useState(false);
-  const [cameraRequested, setCameraRequested] = useState(false);
 
   const sessionRef = useRef<Session | null>(null);
   const userTranscriptRef = useRef('');
   const assistantTranscriptRef = useRef('');
-  const cameraRequestedRef = useRef(false);
-  const cameraCooldownRef = useRef(false);
   const isStoryModeRef = useRef(false);
 
   // Keep messages accessible from event handlers (beforeunload, visibilitychange)
@@ -142,69 +139,6 @@ export function useGeminiLive(character: CharacterConfig) {
       setMessages((prev) => [...prev, msg]);
       assistantTranscriptRef.current = '';
     }
-  }, []);
-
-  const sendImage = useCallback((base64: string, mimeType: string) => {
-    if (!sessionRef.current) return;
-
-    // Optimistic UI: show card message immediately
-    const msg = storage.addMessage({
-      role: 'user',
-      content: '[Showed a Pokemon card]',
-      timestamp: Date.now(),
-    });
-    setMessages(prev => [...prev, msg]);
-    messagesRef.current = [...messagesRef.current, msg];
-
-    // Two-step: vision API → text description → inject into live session
-    (async () => {
-      try {
-        const res = await fetch('/api/recognize-card', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-App-Source': 'ai-dream-buddies',
-          },
-          body: JSON.stringify({ imageBase64: base64, mimeType }),
-        });
-
-        let description: string;
-        if (res.ok) {
-          const data = await res.json();
-          description = data.description || '';
-        } else {
-          description = '';
-        }
-
-        if (!sessionRef.current) return; // Disconnected while waiting
-
-        const prompt = description
-          ? `[Pokemon card analysis: ${description}] Damian is showing you this Pokemon card! React to it in character — tell him about this Pokemon, teach one English word from the card, and ask a follow-up question.`
-          : 'Damian tried to show you a Pokemon card but the image was unclear. Say your psychic powers are a bit fuzzy and ask him to hold the card closer.';
-
-        sessionRef.current.sendClientContent({
-          turns: [{ role: 'user', parts: [{ text: prompt }] }],
-          turnComplete: true,
-        });
-      } catch {
-        // Vision API or session failed — ask to retry
-        if (sessionRef.current) {
-          try {
-            sessionRef.current.sendClientContent({
-              turns: [{ role: 'user', parts: [{ text: 'Damian tried to show you a Pokemon card but the image was unclear. Say your psychic powers are a bit fuzzy and ask him to hold the card closer.' }] }],
-              turnComplete: true,
-            });
-          } catch {
-            // Session closed — ignore
-          }
-        }
-      }
-    })();
-  }, []);
-
-  const resetCameraRequest = useCallback(() => {
-    setCameraRequested(false);
-    cameraRequestedRef.current = false;
   }, []);
 
   const connect = useCallback(async (isReconnect = false) => {
@@ -415,20 +349,6 @@ export function useGeminiLive(character: CharacterConfig) {
             // Input transcription (what user said)
             if (sc.inputTranscription?.text) {
               userTranscriptRef.current += sc.inputTranscription.text;
-
-              // Voice-triggered camera: detect "拍照" / "take a photo" etc. (Mewtwo only)
-              if (character.id === 'mewtwo'
-                  && !cameraRequestedRef.current && !cameraCooldownRef.current) {
-                const transcript = userTranscriptRef.current.toLowerCase();
-                const triggers = ['拍照', 'take a photo', 'take a picture',
-                                  'show you a card', 'look at my card', 'look at this card'];
-                if (triggers.some(t => transcript.includes(t))) {
-                  cameraRequestedRef.current = true;
-                  cameraCooldownRef.current = true;
-                  setCameraRequested(true);
-                  setTimeout(() => { cameraCooldownRef.current = false; }, 10000);
-                }
-              }
             }
 
             // Output transcription (what Mewtwo said)
@@ -643,8 +563,6 @@ export function useGeminiLive(character: CharacterConfig) {
     }
     setConnectionState('disconnected');
     setError(null);
-    setCameraRequested(false);
-    cameraRequestedRef.current = false;
   }, [character.id, stopCapture, stopPlayback, flushUserTranscript, flushAssistantTranscript]);
 
   const clearHistory = useCallback(() => {
@@ -766,8 +684,5 @@ export function useGeminiLive(character: CharacterConfig) {
     disconnect,
     clearHistory,
     switchStoryMode,
-    sendImage,
-    cameraRequested,
-    resetCameraRequest,
   };
 }

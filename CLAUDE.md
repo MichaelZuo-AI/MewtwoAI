@@ -14,8 +14,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Learning progress tracking: vocabulary status (new → learning → reviewing → mastered)
 - Adaptive curriculum: client-side word review scheduling, new word suggestions from 150-word bank
 - Parent report: Simplified Chinese learning progress reports via `/report` page
-- Pokemon card camera scan: Mewtwo uses "psychic powers" to identify physical Pokemon cards via device camera
-- Voice-triggered camera: say "拍照" or "take a photo" to open a large tap-to-capture overlay (Mewtwo only)
 - Persistent memory with categorized fact extraction across sessions
 - Story time mode for bedtime stories (3-5 min, continuous)
 - Bedtime mode (8:30 PM KST): all characters gently encourage sleep
@@ -36,7 +34,7 @@ npm run dev        # Start dev server (http://localhost:3000)
 npm run build      # Build for production
 npm start          # Start production server
 npm run lint       # Run linter
-npm test           # Run all 857 unit tests (23 suites)
+npm test           # Run all 747 unit tests (19 suites)
 ```
 
 ### Environment Variables Required
@@ -60,7 +58,7 @@ page.tsx (selectedCharacterId in localStorage)
        ├── CharacterDisplay (animated character + aura + crossfade)
        ├── CharacterDots (active character indicator)
        ├── useGeminiLive(character) → WebSocket + audio + KST bedtime
-       └── MicButton, ChatPeek, ChatDrawer, SettingsMenu, StoryTimeButton, CameraButton, CameraOverlay (Mewtwo only)
+       └── MicButton, ChatPeek, ChatDrawer, SettingsMenu, StoryTimeButton
 ```
 
 ### Tech Stack
@@ -68,7 +66,7 @@ page.tsx (selectedCharacterId in localStorage)
 - **Styling**: Tailwind CSS with per-character themes
 - **AI + Voice**: Google Gemini 2.5 Flash Native Audio Dialog (`@google/genai` v1.5.0)
 - **Storage**: LocalStorage for offline-first experience
-- **Testing**: Jest 30, React Testing Library (857 tests)
+- **Testing**: Jest 30, React Testing Library (747 tests)
 - **Deployment**: Vercel (auto-deploys on push to main)
 
 ### Project Structure
@@ -79,16 +77,13 @@ src/
 │   │   ├── gemini-token/     # Ephemeral token endpoint (validates characterId, passes bedtime)
 │   │   ├── analyze-learning/ # Learning progress analysis via Gemini Flash
 │   │   ├── extract-memories/ # Categorized fact extraction from transcripts
-│   │   ├── recognize-card/   # Pokemon card vision analysis (gemini-2.5-flash)
 │   │   └── parent-report/    # Chinese learning report generation
 │   ├── report/page.tsx       # Parent report page (markdown rendering)
 │   ├── page.tsx              # Character selection + swipe wrapper + slide animations
 │   ├── layout.tsx            # Root layout with PWA config
 │   └── globals.css           # All animations (float, speak, listen, think, slide, aura, camera overlay)
 ├── components/
-│   ├── VoiceChat.tsx         # Main voice chat interface + camera wiring + overlay (Mewtwo only)
-│   ├── CameraButton.tsx     # Pokemon card camera trigger (Mewtwo only, top bar fallback)
-│   ├── CameraOverlay.tsx    # Voice-triggered full-screen tap-to-capture overlay (Mewtwo only)
+│   ├── VoiceChat.tsx         # Main voice chat interface
 │   ├── CharacterDisplay.tsx  # Animated character + aura + resolveImage() + crossfade
 │   ├── CharacterSelect.tsx   # Character selection grid + ParentReportButton
 │   ├── CharacterDots.tsx     # Active character dot indicator
@@ -99,20 +94,19 @@ src/
 │   ├── SettingsMenu.tsx      # Settings panel
 │   └── StoryTimeButton.tsx   # Story mode toggle
 ├── hooks/
-│   ├── useGeminiLive.ts      # Central orchestrator: token, WebSocket, audio, bedtime, learning, sendImage, voice camera trigger
+│   ├── useGeminiLive.ts      # Central orchestrator: token, WebSocket, audio, bedtime, learning
 │   ├── useAudioCapture.ts    # Microphone capture -> PCM 16kHz base64
 │   ├── useAudioPlayback.ts   # PCM 24kHz base64 -> speaker playback queue
 │   └── useSwipeGesture.ts    # Touch swipe detection (horizontal/vertical locking)
 ├── lib/
 │   ├── characters/           # Character configs (one file per character)
 │   │   ├── index.ts          # Registry: getCharacter, getAllCharacters, getNext/Previous
-│   │   ├── mewtwo.ts         # Mewtwo: Fenrir voice, purple theme, bedtime addendum, card recognition
+│   │   ├── mewtwo.ts         # Mewtwo: Fenrir voice, purple theme, bedtime addendum
 │   │   ├── kirby.ts          # Kirby: Puck voice, pink theme, bedtime addendum
 │   │   ├── dragonite.ts      # Dragonite: Aoede voice, orange theme, bedtime addendum
 │   │   ├── magolor.ts        # Magolor: Kore voice, indigo theme, bedtime addendum
 │   │   ├── minions.ts        # Minions: Zephyr voice, yellow theme, bedtime addendum
 │   │   └── snorlax.ts        # Snorlax: Charon voice, teal theme, bedtime addendum
-│   ├── imageUtils.ts          # Image resize/compress for camera capture
 │   ├── learning.ts           # Vocabulary tracking, curriculum planning, word bank
 │   └── storage.ts            # LocalStorage: conversations, memory, facts, learning profile
 └── types/
@@ -132,8 +126,6 @@ src/
 7. **Swipe navigation**: Circular character switching with direction locking, drag resistance, 80px threshold
 8. **Parallel extraction**: Fact extraction + learning analysis run via `Promise.allSettled` on connect — no added latency
 9. **Client-side curriculum**: `computeCurriculum()` picks review words + suggests new words from 150-word bank — zero API calls, injected into system prompt
-10. **Camera card scan (two-step vision)**: Mewtwo-only feature — image sent to `/api/recognize-card` (gemini-2.5-flash vision) for text description, then description injected as text into live audio session via `sendClientContent`. The Live Audio model ignores images directly, so this two-step approach is required. Image resized to 1024px max, file type/size validated client-side
-11. **Voice-triggered camera**: Detects "拍照"/"take a photo"/"take a picture"/"show you a card" etc. from real-time transcription. Shows large overlay (160px button) that satisfies iOS user-gesture requirement for `<input>.click()`. Auto-dismisses after 8s, 10s cooldown prevents re-triggers
 
 ### Character System
 

@@ -71,36 +71,6 @@ jest.mock('../CharacterDots', () => {
   };
 });
 
-jest.mock('../CameraButton', () => {
-  return function MockCameraButton({ onCapture, disabled }: any) {
-    return (
-      <button
-        data-testid="camera-button"
-        onClick={onCapture}
-        disabled={disabled}
-        aria-label="Scan Pokemon card"
-      >
-        camera
-      </button>
-    );
-  };
-});
-
-jest.mock('../CameraOverlay', () => {
-  return function MockCameraOverlay({ onCapture, onDismiss }: any) {
-    return (
-      <div data-testid="camera-overlay">
-        <button data-testid="camera-overlay-capture" onClick={onCapture}>capture</button>
-        <button data-testid="camera-overlay-dismiss" onClick={onDismiss}>dismiss</button>
-      </div>
-    );
-  };
-});
-
-jest.mock('@/lib/imageUtils', () => ({
-  resizeImage: jest.fn(() => Promise.resolve({ base64: 'test-base64', mimeType: 'image/jpeg' })),
-}));
-
 jest.mock('../StoryTimeButton', () => {
   return function MockStoryTimeButton({ onToggle, isStoryMode }: any) {
     return (
@@ -120,8 +90,6 @@ const mockConnect = jest.fn();
 const mockDisconnect = jest.fn();
 const mockClearHistory = jest.fn();
 const mockSwitchStoryMode = jest.fn();
-const mockSendImage = jest.fn();
-const mockResetCameraRequest = jest.fn();
 const mockOnBack = jest.fn();
 
 const mockUseGeminiLive = jest.fn(() => ({
@@ -135,9 +103,6 @@ const mockUseGeminiLive = jest.fn(() => ({
   disconnect: mockDisconnect,
   clearHistory: mockClearHistory,
   switchStoryMode: mockSwitchStoryMode,
-  sendImage: mockSendImage,
-  cameraRequested: false,
-  resetCameraRequest: mockResetCameraRequest,
 }));
 
 jest.mock('@/hooks/useGeminiLive', () => ({
@@ -159,9 +124,6 @@ describe('VoiceChat', () => {
       disconnect: mockDisconnect,
       clearHistory: mockClearHistory,
       switchStoryMode: mockSwitchStoryMode,
-      sendImage: mockSendImage,
-      cameraRequested: false,
-      resetCameraRequest: mockResetCameraRequest,
     });
   });
 
@@ -473,190 +435,6 @@ describe('VoiceChat', () => {
     });
   });
 
-  describe('camera button (Mewtwo only)', () => {
-    it('renders camera button for Mewtwo', () => {
-      render(<VoiceChat character={mewtwo} onBack={mockOnBack} />);
-      expect(screen.getByTestId('camera-button')).toBeInTheDocument();
-    });
-
-    it('does not render camera button for Kirby', () => {
-      render(<VoiceChat character={kirby} onBack={mockOnBack} />);
-      expect(screen.queryByTestId('camera-button')).not.toBeInTheDocument();
-    });
-
-    it('disables camera button when disconnected', () => {
-      render(<VoiceChat character={mewtwo} onBack={mockOnBack} />);
-      expect(screen.getByTestId('camera-button')).toBeDisabled();
-    });
-
-    it('disables camera button when reconnecting', () => {
-      mockUseGeminiLive.mockReturnValue({
-        voiceState: 'idle',
-        connectionState: 'reconnecting',
-        messages: [],
-        error: 'Reconnecting...',
-        isSupported: true,
-        isStoryMode: false,
-        connect: mockConnect,
-        disconnect: mockDisconnect,
-        clearHistory: mockClearHistory,
-        switchStoryMode: mockSwitchStoryMode,
-        sendImage: mockSendImage,
-      });
-
-      render(<VoiceChat character={mewtwo} onBack={mockOnBack} />);
-      expect(screen.getByTestId('camera-button')).toBeDisabled();
-    });
-
-    it('enables camera button when connected', () => {
-      mockUseGeminiLive.mockReturnValue({
-        voiceState: 'idle',
-        connectionState: 'connected',
-        messages: [],
-        error: null,
-        isSupported: true,
-        isStoryMode: false,
-        connect: mockConnect,
-        disconnect: mockDisconnect,
-        clearHistory: mockClearHistory,
-        switchStoryMode: mockSwitchStoryMode,
-        sendImage: mockSendImage,
-      });
-
-      render(<VoiceChat character={mewtwo} onBack={mockOnBack} />);
-      expect(screen.getByTestId('camera-button')).not.toBeDisabled();
-    });
-  });
-
-  describe('hidden file input (Mewtwo only)', () => {
-    it('renders hidden file input for Mewtwo', () => {
-      const { container } = render(<VoiceChat character={mewtwo} onBack={mockOnBack} />);
-      const input = container.querySelector('input[type="file"]');
-      expect(input).toBeInTheDocument();
-    });
-
-    it('does not render hidden file input for Kirby', () => {
-      const { container } = render(<VoiceChat character={kirby} onBack={mockOnBack} />);
-      const input = container.querySelector('input[type="file"]');
-      expect(input).not.toBeInTheDocument();
-    });
-
-    it('file input accepts images', () => {
-      const { container } = render(<VoiceChat character={mewtwo} onBack={mockOnBack} />);
-      const input = container.querySelector('input[type="file"]') as HTMLInputElement;
-      expect(input.accept).toBe('image/*');
-    });
-
-    it('file input does not force camera capture (allows gallery picker)', () => {
-      const { container } = render(<VoiceChat character={mewtwo} onBack={mockOnBack} />);
-      const input = container.querySelector('input[type="file"]');
-      expect(input?.getAttribute('capture')).toBeNull();
-    });
-
-    it('file input is visually hidden', () => {
-      const { container } = render(<VoiceChat character={mewtwo} onBack={mockOnBack} />);
-      const input = container.querySelector('input[type="file"]');
-      expect(input?.className).toContain('hidden');
-    });
-
-    it('file input has aria-hidden attribute', () => {
-      const { container } = render(<VoiceChat character={mewtwo} onBack={mockOnBack} />);
-      const input = container.querySelector('input[type="file"]');
-      expect(input?.getAttribute('aria-hidden')).toBe('true');
-    });
-  });
-
-  describe('handleFileSelected', () => {
-    const { resizeImage: mockResizeImage } = require('@/lib/imageUtils');
-
-    beforeEach(() => {
-      mockUseGeminiLive.mockReturnValue({
-        voiceState: 'idle',
-        connectionState: 'connected',
-        messages: [],
-        error: null,
-        isSupported: true,
-        isStoryMode: false,
-        connect: mockConnect,
-        disconnect: mockDisconnect,
-        clearHistory: mockClearHistory,
-        switchStoryMode: mockSwitchStoryMode,
-        sendImage: mockSendImage,
-      });
-    });
-
-    it('calls resizeImage and then sendImage when a file is selected', async () => {
-      const { container } = render(<VoiceChat character={mewtwo} onBack={mockOnBack} />);
-      const input = container.querySelector('input[type="file"]') as HTMLInputElement;
-
-      const file = new File(['test'], 'card.jpg', { type: 'image/jpeg' });
-      Object.defineProperty(input, 'files', { value: [file], configurable: true });
-
-      await act(async () => {
-        fireEvent.change(input, { target: { files: [file] } });
-      });
-
-      expect(mockResizeImage).toHaveBeenCalledWith(file);
-      expect(mockSendImage).toHaveBeenCalledWith('test-base64', 'image/jpeg');
-    });
-
-    it('does nothing when no file is selected', async () => {
-      const { container } = render(<VoiceChat character={mewtwo} onBack={mockOnBack} />);
-      const input = container.querySelector('input[type="file"]') as HTMLInputElement;
-
-      await act(async () => {
-        fireEvent.change(input, { target: { files: [] } });
-      });
-
-      expect(mockResizeImage).not.toHaveBeenCalled();
-      expect(mockSendImage).not.toHaveBeenCalled();
-    });
-
-    it('rejects non-image files', async () => {
-      const { container } = render(<VoiceChat character={mewtwo} onBack={mockOnBack} />);
-      const input = container.querySelector('input[type="file"]') as HTMLInputElement;
-
-      const file = new File(['test'], 'doc.pdf', { type: 'application/pdf' });
-
-      await act(async () => {
-        fireEvent.change(input, { target: { files: [file] } });
-      });
-
-      expect(mockResizeImage).not.toHaveBeenCalled();
-      expect(mockSendImage).not.toHaveBeenCalled();
-    });
-
-    it('rejects files over 10MB', async () => {
-      const { container } = render(<VoiceChat character={mewtwo} onBack={mockOnBack} />);
-      const input = container.querySelector('input[type="file"]') as HTMLInputElement;
-
-      const bigFile = new File([new ArrayBuffer(11 * 1024 * 1024)], 'big.jpg', { type: 'image/jpeg' });
-
-      await act(async () => {
-        fireEvent.change(input, { target: { files: [bigFile] } });
-      });
-
-      expect(mockResizeImage).not.toHaveBeenCalled();
-      expect(mockSendImage).not.toHaveBeenCalled();
-    });
-
-    it('silently ignores resizeImage errors', async () => {
-      mockResizeImage.mockRejectedValueOnce(new Error('Canvas context failed'));
-
-      const { container } = render(<VoiceChat character={mewtwo} onBack={mockOnBack} />);
-      const input = container.querySelector('input[type="file"]') as HTMLInputElement;
-
-      const file = new File(['test'], 'bad.jpg', { type: 'image/jpeg' });
-
-      await act(async () => {
-        fireEvent.change(input, { target: { files: [file] } });
-      });
-
-      // Should not throw and should not call sendImage
-      expect(mockSendImage).not.toHaveBeenCalled();
-    });
-  });
-
   describe('settings and story mode', () => {
     it('calls clearHistory from settings menu', () => {
       render(<VoiceChat character={mewtwo} onBack={mockOnBack} />);
@@ -671,117 +449,4 @@ describe('VoiceChat', () => {
     });
   });
 
-  describe('camera overlay (voice-triggered)', () => {
-    it('does not render overlay by default', () => {
-      render(<VoiceChat character={mewtwo} onBack={mockOnBack} />);
-      expect(screen.queryByTestId('camera-overlay')).not.toBeInTheDocument();
-    });
-
-    it('renders overlay when cameraRequested + Mewtwo + connected', () => {
-      mockUseGeminiLive.mockReturnValue({
-        voiceState: 'idle',
-        connectionState: 'connected',
-        messages: [],
-        error: null,
-        isSupported: true,
-        isStoryMode: false,
-        connect: mockConnect,
-        disconnect: mockDisconnect,
-        clearHistory: mockClearHistory,
-        switchStoryMode: mockSwitchStoryMode,
-        sendImage: mockSendImage,
-        cameraRequested: true,
-        resetCameraRequest: mockResetCameraRequest,
-      });
-
-      render(<VoiceChat character={mewtwo} onBack={mockOnBack} />);
-      expect(screen.getByTestId('camera-overlay')).toBeInTheDocument();
-    });
-
-    it('does not render overlay for Kirby even when cameraRequested', () => {
-      mockUseGeminiLive.mockReturnValue({
-        voiceState: 'idle',
-        connectionState: 'connected',
-        messages: [],
-        error: null,
-        isSupported: true,
-        isStoryMode: false,
-        connect: mockConnect,
-        disconnect: mockDisconnect,
-        clearHistory: mockClearHistory,
-        switchStoryMode: mockSwitchStoryMode,
-        sendImage: mockSendImage,
-        cameraRequested: true,
-        resetCameraRequest: mockResetCameraRequest,
-      });
-
-      render(<VoiceChat character={kirby} onBack={mockOnBack} />);
-      expect(screen.queryByTestId('camera-overlay')).not.toBeInTheDocument();
-    });
-
-    it('does not render overlay when disconnected even when cameraRequested', () => {
-      mockUseGeminiLive.mockReturnValue({
-        voiceState: 'idle',
-        connectionState: 'disconnected',
-        messages: [],
-        error: null,
-        isSupported: true,
-        isStoryMode: false,
-        connect: mockConnect,
-        disconnect: mockDisconnect,
-        clearHistory: mockClearHistory,
-        switchStoryMode: mockSwitchStoryMode,
-        sendImage: mockSendImage,
-        cameraRequested: true,
-        resetCameraRequest: mockResetCameraRequest,
-      });
-
-      render(<VoiceChat character={mewtwo} onBack={mockOnBack} />);
-      expect(screen.queryByTestId('camera-overlay')).not.toBeInTheDocument();
-    });
-
-    it('calls resetCameraRequest when overlay capture is tapped', () => {
-      mockUseGeminiLive.mockReturnValue({
-        voiceState: 'idle',
-        connectionState: 'connected',
-        messages: [],
-        error: null,
-        isSupported: true,
-        isStoryMode: false,
-        connect: mockConnect,
-        disconnect: mockDisconnect,
-        clearHistory: mockClearHistory,
-        switchStoryMode: mockSwitchStoryMode,
-        sendImage: mockSendImage,
-        cameraRequested: true,
-        resetCameraRequest: mockResetCameraRequest,
-      });
-
-      render(<VoiceChat character={mewtwo} onBack={mockOnBack} />);
-      fireEvent.click(screen.getByTestId('camera-overlay-capture'));
-      expect(mockResetCameraRequest).toHaveBeenCalledTimes(1);
-    });
-
-    it('calls resetCameraRequest when overlay dismiss is tapped', () => {
-      mockUseGeminiLive.mockReturnValue({
-        voiceState: 'idle',
-        connectionState: 'connected',
-        messages: [],
-        error: null,
-        isSupported: true,
-        isStoryMode: false,
-        connect: mockConnect,
-        disconnect: mockDisconnect,
-        clearHistory: mockClearHistory,
-        switchStoryMode: mockSwitchStoryMode,
-        sendImage: mockSendImage,
-        cameraRequested: true,
-        resetCameraRequest: mockResetCameraRequest,
-      });
-
-      render(<VoiceChat character={mewtwo} onBack={mockOnBack} />);
-      fireEvent.click(screen.getByTestId('camera-overlay-dismiss'));
-      expect(mockResetCameraRequest).toHaveBeenCalledTimes(1);
-    });
-  });
 });
