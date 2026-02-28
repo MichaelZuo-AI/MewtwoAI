@@ -36,7 +36,7 @@ npm run dev        # Start dev server (http://localhost:3000)
 npm run build      # Build for production
 npm start          # Start production server
 npm run lint       # Run linter
-npm test           # Run all 839 unit tests (22 suites)
+npm test           # Run all 857 unit tests (23 suites)
 ```
 
 ### Environment Variables Required
@@ -68,7 +68,7 @@ page.tsx (selectedCharacterId in localStorage)
 - **Styling**: Tailwind CSS with per-character themes
 - **AI + Voice**: Google Gemini 2.5 Flash Native Audio Dialog (`@google/genai` v1.5.0)
 - **Storage**: LocalStorage for offline-first experience
-- **Testing**: Jest 30, React Testing Library (839 tests)
+- **Testing**: Jest 30, React Testing Library (857 tests)
 - **Deployment**: Vercel (auto-deploys on push to main)
 
 ### Project Structure
@@ -79,6 +79,7 @@ src/
 │   │   ├── gemini-token/     # Ephemeral token endpoint (validates characterId, passes bedtime)
 │   │   ├── analyze-learning/ # Learning progress analysis via Gemini Flash
 │   │   ├── extract-memories/ # Categorized fact extraction from transcripts
+│   │   ├── recognize-card/   # Pokemon card vision analysis (gemini-2.5-flash)
 │   │   └── parent-report/    # Chinese learning report generation
 │   ├── report/page.tsx       # Parent report page (markdown rendering)
 │   ├── page.tsx              # Character selection + swipe wrapper + slide animations
@@ -131,7 +132,7 @@ src/
 7. **Swipe navigation**: Circular character switching with direction locking, drag resistance, 80px threshold
 8. **Parallel extraction**: Fact extraction + learning analysis run via `Promise.allSettled` on connect — no added latency
 9. **Client-side curriculum**: `computeCurriculum()` picks review words + suggests new words from 150-word bank — zero API calls, injected into system prompt
-10. **Camera card scan**: Mewtwo-only feature — `sendClientContent()` sends resized JPEG + text prompt via active WebSocket session. Image resized to 1024px max, file type/size validated client-side
+10. **Camera card scan (two-step vision)**: Mewtwo-only feature — image sent to `/api/recognize-card` (gemini-2.5-flash vision) for text description, then description injected as text into live audio session via `sendClientContent`. The Live Audio model ignores images directly, so this two-step approach is required. Image resized to 1024px max, file type/size validated client-side
 11. **Voice-triggered camera**: Detects "拍照"/"take a photo"/"take a picture"/"show you a card" etc. from real-time transcription. Shows large overlay (160px button) that satisfies iOS user-gesture requirement for `<input>.click()`. Auto-dismisses after 8s, 10s cooldown prevents re-triggers
 
 ### Character System
