@@ -146,27 +146,60 @@ export function useGeminiLive(character: CharacterConfig) {
 
   const sendImage = useCallback((base64: string, mimeType: string) => {
     if (!sessionRef.current) return;
-    try {
-      sessionRef.current.sendClientContent({
-        turns: [{
-          role: 'user',
-          parts: [
-            { inlineData: { data: base64, mimeType } },
-            { text: 'I am showing you a Pokemon card! Look at this card and tell me about this Pokemon.' },
-          ],
-        }],
-        turnComplete: true,
-      });
-      const msg = storage.addMessage({
-        role: 'user',
-        content: '[Showed a Pokemon card]',
-        timestamp: Date.now(),
-      });
-      setMessages(prev => [...prev, msg]);
-      messagesRef.current = [...messagesRef.current, msg];
-    } catch {
-      // Session closed between check and send — ignore
-    }
+
+    // Optimistic UI: show card message immediately
+    const msg = storage.addMessage({
+      role: 'user',
+      content: '[Showed a Pokemon card]',
+      timestamp: Date.now(),
+    });
+    setMessages(prev => [...prev, msg]);
+    messagesRef.current = [...messagesRef.current, msg];
+
+    // Two-step: vision API → text description → inject into live session
+    (async () => {
+      try {
+        const res = await fetch('/api/recognize-card', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-App-Source': 'ai-dream-buddies',
+          },
+          body: JSON.stringify({ imageBase64: base64, mimeType }),
+        });
+
+        let description: string;
+        if (res.ok) {
+          const data = await res.json();
+          description = data.description || '';
+        } else {
+          description = '';
+        }
+
+        if (!sessionRef.current) return; // Disconnected while waiting
+
+        const prompt = description
+          ? `[Pokemon card analysis: ${description}] Damian is showing you this Pokemon card! React to it in character — tell him about this Pokemon, teach one English word from the card, and ask a follow-up question.`
+          : 'Damian tried to show you a Pokemon card but the image was unclear. Say your psychic powers are a bit fuzzy and ask him to hold the card closer.';
+
+        sessionRef.current.sendClientContent({
+          turns: [{ role: 'user', parts: [{ text: prompt }] }],
+          turnComplete: true,
+        });
+      } catch {
+        // Vision API or session failed — ask to retry
+        if (sessionRef.current) {
+          try {
+            sessionRef.current.sendClientContent({
+              turns: [{ role: 'user', parts: [{ text: 'Damian tried to show you a Pokemon card but the image was unclear. Say your psychic powers are a bit fuzzy and ask him to hold the card closer.' }] }],
+              turnComplete: true,
+            });
+          } catch {
+            // Session closed — ignore
+          }
+        }
+      }
+    })();
   }, []);
 
   const resetCameraRequest = useCallback(() => {

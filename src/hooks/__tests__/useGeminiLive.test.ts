@@ -1482,30 +1482,39 @@ describe('useGeminiLive', () => {
       expect(typeof result.current.sendImage).toBe('function');
     });
 
-    it('calls sendClientContent with image data when connected', async () => {
+    it('calls vision API and injects text description into live session', async () => {
       const { result } = renderHook(() => useGeminiLive(mewtwo));
 
       await act(async () => {
         await result.current.connect();
       });
 
-      act(() => {
+      // Set up mock for recognize-card AFTER connect consumed the token fetch
+      mockFetch.mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ description: 'Pikachu, Electric type, 60 HP.' }) });
+
+      await act(async () => {
         result.current.sendImage('base64data', 'image/jpeg');
+        await new Promise(r => setTimeout(r, 0));
       });
 
+      // Should have called /api/recognize-card
+      const recognizeCall = mockFetch.mock.calls.find(
+        (call: any[]) => typeof call[0] === 'string' && call[0] === '/api/recognize-card'
+      );
+      expect(recognizeCall).toBeDefined();
+      expect(JSON.parse(recognizeCall![1].body)).toEqual({
+        imageBase64: 'base64data',
+        mimeType: 'image/jpeg',
+      });
+
+      // Should inject text-only prompt (no inlineData) into live session
       expect(mockSession.sendClientContent).toHaveBeenCalledWith({
-        turns: [{
-          role: 'user',
-          parts: [
-            { inlineData: { data: 'base64data', mimeType: 'image/jpeg' } },
-            { text: 'I am showing you a Pokemon card! Look at this card and tell me about this Pokemon.' },
-          ],
-        }],
+        turns: [{ role: 'user', parts: [{ text: expect.stringContaining('Pikachu, Electric type, 60 HP.') }] }],
         turnComplete: true,
       });
     });
 
-    it('adds card message to messages when sending image', async () => {
+    it('adds card message to messages optimistically', async () => {
       const { result } = renderHook(() => useGeminiLive(mewtwo));
 
       await act(async () => {
@@ -1526,39 +1535,43 @@ describe('useGeminiLive', () => {
       );
     });
 
-    it('does not throw when session is not connected', () => {
+    it('does not call API or sendClientContent when not connected', () => {
       const { result } = renderHook(() => useGeminiLive(mewtwo));
 
-      // Not connected, sendImage should be a no-op
-      expect(() => {
-        act(() => {
-          result.current.sendImage('base64data', 'image/jpeg');
-        });
-      }).not.toThrow();
+      act(() => {
+        result.current.sendImage('base64data', 'image/jpeg');
+      });
 
+      // Should not call recognize-card API
+      const recognizeCall = mockFetch.mock.calls.find(
+        (call: any[]) => typeof call[0] === 'string' && call[0] === '/api/recognize-card'
+      );
+      expect(recognizeCall).toBeUndefined();
       expect(mockSession.sendClientContent).not.toHaveBeenCalled();
     });
 
-    it('passes mimeType through to sendClientContent', async () => {
+    it('passes mimeType to vision API', async () => {
       const { result } = renderHook(() => useGeminiLive(mewtwo));
 
       await act(async () => {
         await result.current.connect();
       });
 
-      act(() => {
+      mockFetch.mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ description: 'Charizard' }) });
+
+      await act(async () => {
         result.current.sendImage('pngdata', 'image/png');
+        await new Promise(r => setTimeout(r, 0));
       });
 
-      expect(mockSession.sendClientContent).toHaveBeenCalledWith(
-        expect.objectContaining({
-          turns: [expect.objectContaining({
-            parts: expect.arrayContaining([
-              { inlineData: { data: 'pngdata', mimeType: 'image/png' } },
-            ]),
-          })],
-        })
+      const recognizeCall = mockFetch.mock.calls.find(
+        (call: any[]) => typeof call[0] === 'string' && call[0] === '/api/recognize-card'
       );
+      expect(recognizeCall).toBeDefined();
+      expect(JSON.parse(recognizeCall![1].body)).toEqual({
+        imageBase64: 'pngdata',
+        mimeType: 'image/png',
+      });
     });
 
     it('persists image message via storage.addMessage', async () => {
@@ -1580,22 +1593,102 @@ describe('useGeminiLive', () => {
       );
     });
 
-    it('does not throw when sendClientContent throws', async () => {
+    it('sends fallback prompt when vision API fails', async () => {
       const { result } = renderHook(() => useGeminiLive(mewtwo));
 
       await act(async () => {
         await result.current.connect();
       });
 
+      mockFetch.mockRejectedValueOnce(new Error('Network error'));
+
+      await act(async () => {
+        result.current.sendImage('base64data', 'image/jpeg');
+        await new Promise(r => setTimeout(r, 0));
+      });
+
+      // Should send fallback text about psychic powers being fuzzy
+      expect(mockSession.sendClientContent).toHaveBeenCalledWith({
+        turns: [{ role: 'user', parts: [{ text: expect.stringContaining('psychic powers') }] }],
+        turnComplete: true,
+      });
+    });
+
+    it('sends fallback prompt when vision API returns non-ok', async () => {
+      const { result } = renderHook(() => useGeminiLive(mewtwo));
+
+      await act(async () => {
+        await result.current.connect();
+      });
+
+      mockFetch.mockResolvedValueOnce({ ok: false, json: () => Promise.resolve({ error: 'failed' }) });
+
+      await act(async () => {
+        result.current.sendImage('base64data', 'image/jpeg');
+        await new Promise(r => setTimeout(r, 0));
+      });
+
+      // Non-ok response means empty description → fallback prompt
+      expect(mockSession.sendClientContent).toHaveBeenCalledWith({
+        turns: [{ role: 'user', parts: [{ text: expect.stringContaining('psychic powers') }] }],
+        turnComplete: true,
+      });
+    });
+
+    it('does not inject text if session closes during vision API call', async () => {
+      let resolveVision: (value: any) => void;
+      const visionPromise = new Promise(r => { resolveVision = r; });
+
+      const { result } = renderHook(() => useGeminiLive(mewtwo));
+
+      await act(async () => {
+        await result.current.connect();
+      });
+
+      mockFetch.mockReturnValueOnce(visionPromise);
+
+      act(() => {
+        result.current.sendImage('base64data', 'image/jpeg');
+      });
+
+      // Disconnect before vision API resolves
+      await act(async () => {
+        result.current.disconnect();
+      });
+
+      // Now resolve vision API
+      await act(async () => {
+        resolveVision!({ ok: true, json: () => Promise.resolve({ description: 'Pikachu' }) });
+        await new Promise(r => setTimeout(r, 0));
+      });
+
+      // sendClientContent should NOT have been called with the card prompt
+      const cardCalls = mockSession.sendClientContent.mock.calls.filter(
+        (call: any[]) => call[0]?.turns?.[0]?.parts?.[0]?.text?.includes('Pokemon card')
+      );
+      expect(cardCalls).toHaveLength(0);
+    });
+
+    it('does not throw when sendClientContent throws during fallback', async () => {
+      const { result } = renderHook(() => useGeminiLive(mewtwo));
+
+      await act(async () => {
+        await result.current.connect();
+      });
+
+      mockFetch.mockRejectedValueOnce(new Error('Vision failed'));
+
+      // Make sendClientContent throw (session closed)
       mockSession.sendClientContent.mockImplementationOnce(() => {
         throw new Error('Session already closed');
       });
 
-      expect(() => {
-        act(() => {
-          result.current.sendImage('base64data', 'image/jpeg');
-        });
-      }).not.toThrow();
+      await act(async () => {
+        result.current.sendImage('base64data', 'image/jpeg');
+        await new Promise(r => setTimeout(r, 0));
+      });
+
+      // Should not throw — error is caught silently
     });
   });
 
